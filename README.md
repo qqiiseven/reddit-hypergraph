@@ -2,7 +2,7 @@
 
 一个真实 Reddit 数据驱动的交互式超图探索项目：**哪些社区通过同一批人相连，这些人下一期又会出现在哪里？**
 
-全部原始数据、处理产物、代码、模型和页面位于此目录。无外部 API、CDN 或在线推理依赖。数据原本是有向回复图；本项目从中派生“社区 × 时期”的共同参与超边，没有把回复图冒充原生超图。
+网页没有外部 API、CDN 或在线推理依赖。数据原本是有向回复图；本项目从中派生“社区 × 时期”的共同参与超边，没有把回复图冒充原生超图。原始大数据包、训练权重和本地环境与网页展示所需的资源分开管理。
 
 ## 已实现的五个问题
 
@@ -14,12 +14,19 @@
 | 下一期真实出现在哪些社区 | 下一期预测：揭晓、查看全部出现与新增 | 下一期集合减去此前所有出现社区 |
 | 预测下一期的新社区 | 下一期预测：切换四种方法、看命中与失败 | HGNN+ 任务适配、无聚合 MLP 消融、重叠与热门基线 |
 
-## 打开已经生成的页面
+## 克隆与启动
+
+仓库：https://github.com/qqiiseven/hypergraph_vis
+
+只浏览完整演示需要 **Python 3.9 或更新版本**，不需要安装 PyTorch、Node.js 或 npm 依赖。当前项目分支为 `task/reddit-hypergraph`。
 
 ```sh
-cd '/Users/xusiqi/THU/课程/数据可视化/MidTerm/project'
+git clone --branch task/reddit-hypergraph https://github.com/qqiiseven/hypergraph_vis.git
+cd hypergraph_vis
 python3 serve.py
 ```
+
+Windows 可用 `py -3 serve.py`，也可以双击 `start.bat`。已有仓库的协作者可在该分支执行 `git pull --ff-only` 更新代码，然后重启本地服务并刷新浏览器。
 
 浏览器访问 http://127.0.0.1:8765 。结束时在终端按 Ctrl+C。不要直接双击 `dist/index.html`，浏览器通常会拦截本地 JSON 的读取。如端口被占用，可加 `--port 8766`。页面可断网运行（源码引用链接需要联网）。
 
@@ -31,7 +38,7 @@ python3 serve.py
 
 ## 从零复现
 
-Python 3.11，Node 仅用于 JS 语法检查。当前环境为 macOS Apple Silicon，CPU 训练；精确依赖记录在 `requirements.lock`。跨平台可按 `requirements.txt` 安装兼容版本。
+以下是重新下载原始数据、处理和训练的流程，普通网页演示不需要执行。训练使用 Python 3.11；精确依赖记录在 `requirements.lock`。当前训练环境为 macOS Apple Silicon，CPU 训练；跨平台可按 `requirements.txt` 安装兼容版本。修改前端绘图库适配器时使用 Node.js：`npm ci && npm run build`，前端测试运行 `npm test`。
 
 ```sh
 python3 -m venv .venv
@@ -121,7 +128,7 @@ artifacts/                  真实训练的 HGNN+ 与 MLP 权重
 reports/                    数据审计、训练指标、运行日志、验证报告
 ```
 
-原始数据、模型、日志、生成 JSON 和虚拟环境由 `.gitignore` 排除。若后续需要提交 GitHub，只同步源码；仓库当前为独立本地任务仓库，没有配置远程地址。轻量课堂演示可只携带 `dist/` 与 `serve.py`，不需要携带 996 MiB 原始包；数据再分发应核查来源的使用条件。
+原始数据、模型权重、日志、用户名映射、密钥和虚拟环境由 `.gitignore` 排除。Git 远程仓库为 `qqiiseven/hypergraph_vis`，只在任务分支同步本项目相关改动。轻量课堂演示可只携带完整 `dist/` 与 `serve.py`，不需要携带 996 MiB 原始包。
 
 ## 讲述边界与 AI 使用说明
 
