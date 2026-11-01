@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import torch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
-from model import build_snapshot, propagate, rank_metrics, baseline_scores
+from model import ParticipationModel, build_snapshot, propagate, rank_metrics, baseline_scores
 
 class PipelineTests(unittest.TestCase):
     def setUp(self):
@@ -46,5 +46,16 @@ class PipelineTests(unittest.TestCase):
         s=build_snapshot(m,np.zeros((2,4)),0)
         self.assertFalse(s['known'].any())
         self.assertTrue(torch.isfinite(propagate(torch.ones(4,2),s)).all())
+
+    def test_train_step_accepts_preprocessed_features(self):
+        s=build_snapshot(self.m,self.d,1)
+        for hyper in [True,False]:
+            model=ParticipationModel(s['x'].shape[1],3,hidden=8,hypergraph=hyper)
+            logits=model(s)
+            self.assertEqual(tuple(logits.shape),(3,3))
+            loss=torch.nn.functional.binary_cross_entropy_with_logits(logits,torch.tensor(self.m[2],dtype=torch.float32))
+            loss.backward()
+            self.assertTrue(torch.isfinite(loss))
+            self.assertTrue(all(torch.isfinite(p.grad).all() for p in model.parameters()))
 
 if __name__=='__main__': unittest.main()

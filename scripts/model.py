@@ -16,7 +16,7 @@ def build_snapshot(membership, degree, cutoff):
     recent = hist[-min(2,len(hist)):].mean(0)
     active = hist.any(2).mean(0)[:,None]
     outgoing = np.log1p(degree[:cutoff+1].mean(0))[:,None] / 10
-    X = np.concatenate([seen.astype(np.float32),frequency,recent,active,outgoing],axis=1)
+    X = np.concatenate([seen.astype(np.float32),frequency,recent,active,outgoing],axis=1).astype(np.float32)
     # Each community-period is a distinct hyperedge. Empty columns are harmless.
     H = hist.transpose(1,0,2).reshape(hist.shape[1],-1)
     rows, cols = np.nonzero(H)
