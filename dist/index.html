@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>圈外 / CROSSING — Reddit 参与轨迹</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<aside class="sidebar">
+  <a href="#" class="brand" aria-label="圈外 首页"><span class="brand-mark">↗</span><strong>圈外 <small>CROSSING</small></strong></a>
+  <p class="side-caption">REDDIT · 2014<br>社区之间，人的轨迹</p>
+  <nav aria-label="主要视图">
+    <button data-view="map" class="active"><span>01</span> 圈层地图 <b>↗</b></button>
+    <button data-view="trajectory"><span>02</span> 参与轨迹 <b>↗</b></button>
+    <button data-view="bridges"><span>03</span> 跨圈连接者 <b>↗</b></button>
+    <button data-view="prediction"><span>04</span> 下一期预测 <b>↗</b></button>
+    <button data-view="methods"><span>05</span> 模型与数据 <b>↗</b></button>
+  </nav>
+  <div class="side-bottom"><span class="live-dot"></span> 本地真实数据实验<br><p>观察 → 连接 → 预测 → 核验</p><a href="https://snap.stanford.edu/data/web-RedditNetworks.html" target="_blank" rel="noreferrer">Stanford SNAP 数据来源 ↗</a></div>
+</aside>
+<main>
+  <header class="topbar"><div>数据可视化 / 超图探索</div><div class="top-meta">11 个观察窗口 <span>每期 28 天</span></div></header>
+  <section class="intro"><div><div class="eyebrow">BEYOND YOUR CIRCLE</div><h1 id="page-title">圈子看似分开，<br>人让它们相连。</h1><p id="page-subtitle">从共享用户出发，看见社区之间的联系，再把下一期交给模型预测。</p></div><div class="intro-stamp"><span>2014</span><small>01.27 — 11.30</small><div>真实记录 / 时间验证</div></div></section>
+  <div id="status" role="status">正在加载本地数据…</div>
+  <section class="stats" id="stats"></section>
+  <section class="time-panel" id="time-panel"><div class="time-heading"><strong>观察窗口 <span id="period-label"></span></strong><span id="period-date"></span></div><input id="period-slider" aria-label="观察期" type="range" min="0" max="10" value="7"><div id="period-ticks" class="ticks"></div></section>
+  <section id="workspace"></section>
+  <footer>共同出现在社区网络 ≠ 彼此有交流。所有统计限于本项目选取的社区与用户；“新社区”仅指此前窗口内未观察到。</footer>
+</main>
+<div id="tooltip" role="tooltip"></div>
+<script src="app.js" defer></script>
+</body></html>

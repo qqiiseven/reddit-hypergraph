@@ -1,0 +1,14 @@
+{
+  "dataset_url": "https://snap.stanford.edu/data/reddit_reply_networks.tar.gz",
+  "source_page": "https://snap.stanford.edu/data/web-RedditNetworks.html",
+  "seed": 42,
+  "max_users": 8000,
+  "selection_last_period": 5,
+  "community_names": ["programming", "learnprogramming", "python", "javascript", "webdev", "web_design", "linux", "ubuntu", "technology", "techsupport", "buildapc", "pcmasterrace", "hardware", "Android", "apple", "gadgets", "gaming", "Games", "pcgaming", "Minecraft", "Steam", "photography", "itookapicture", "travel", "backpacking", "movies", "TrueFilm", "television", "Music", "listentothis", "books", "science", "space", "askscience", "Astronomy", "Fitness", "running", "Cooking", "food", "DIY", "personalfinance", "Frugal", "LifeProTips", "explainlikeimfive"],
+  "train_cutoffs": [2, 3, 4, 5],
+  "validation_cutoff": 6,
+  "test_cutoffs": [7, 8, 9],
+  "hidden_dim": 48,
+  "epochs": 70,
+  "learning_rate": 0.003
+}

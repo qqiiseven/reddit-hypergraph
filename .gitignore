@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+data/
+artifacts/
+tmp/
+dist/data.json
+dist/predictions.json
+reports/*.json
+reports/*.log
+reports/*.png
+.env*
+*.pt
