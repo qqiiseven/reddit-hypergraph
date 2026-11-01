@@ -9,7 +9,7 @@ if __name__=='__main__':
     directory=Path(__file__).resolve().parent/'dist'
     missing=[name for name in ['index.html','app.js','style.css','hypergraph-view.js','data.json','predictions.json'] if not (directory/name).is_file()]
     if missing:
-        raise SystemExit('Missing demo assets: '+', '.join(missing)+'. See README.md for the complete demo or data preparation instructions.')
+        raise SystemExit('Missing demo assets: '+', '.join(missing)+'. First run: python3 setup_demo.py (Windows: py -3.11 setup_demo.py). See README.md.')
     try:
         server=ThreadingHTTPServer(('127.0.0.1',args.port),partial(SimpleHTTPRequestHandler,directory=str(directory)))
     except OSError as exc:

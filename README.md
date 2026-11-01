@@ -18,15 +18,22 @@
 
 仓库：https://github.com/qqiiseven/hypergraph_vis
 
-只浏览完整演示需要 **Python 3.9 或更新版本**，不需要安装 PyTorch、Node.js 或 npm 依赖。当前项目分支为 `task/reddit-hypergraph`。
+**Git 仓库不包含任何数据、预测 JSON 或模型权重。** 首次克隆后必须在自己的机器生成这些文件，不能直接双击 HTML。推荐安装 **Python 3.11**。当前项目分支为 `task/reddit-hypergraph`。
 
 ```sh
 git clone --branch task/reddit-hypergraph https://github.com/qqiiseven/hypergraph_vis.git
 cd hypergraph_vis
+python3 setup_demo.py
 python3 serve.py
 ```
 
-Windows 可用 `py -3 serve.py`，也可以双击 `start.bat`。已有仓库的协作者可在该分支执行 `git pull --ff-only` 更新代码，然后重启本地服务并刷新浏览器。
+Windows 首次运行 `py -3.11 setup_demo.py`，完成后用 `py -3 serve.py`，也可以双击 `start.bat` 启动网页。
+
+`setup_demo.py` 会在项目内创建 `.venv`、安装训练依赖、直接从 Stanford SNAP 下载约 **996 MiB** 原始包、校验 SHA-256、处理 44 个社区的数据、训练模型并生成页面资源。请预留至少 4 GB 磁盘空间；首次耗时主要取决于网络。下载中断后可重跑，`.part` 文件支持断点续传。不需要 Node.js、GitHub 登录、服务器账户或 GPU。生成后的数据留在本机，不会被 `git add` 提交。
+
+首次生成完成后，通常只需运行 `python3 serve.py`；重复运行 `setup_demo.py` 会检查并复用已有结果。若修改了处理/训练代码或配置，执行 `python3 setup_demo.py --rebuild`。不同平台和依赖版本的训练结果可能略有差异，页面会展示这台机器实际生成的指标。
+
+已有仓库的协作者可在该分支执行 `git pull --ff-only` 更新代码。仅更新页面时，重启服务并刷新即可；更新模型或配置时先重新生成。下载与训练已经完成后，网页可离线使用。
 
 浏览器访问 http://127.0.0.1:8765 。结束时在终端按 Ctrl+C。不要直接双击 `dist/index.html`，浏览器通常会拦截本地 JSON 的读取。如端口被占用，可加 `--port 8766`。页面可断网运行（源码引用链接需要联网）。
 
@@ -38,7 +45,7 @@ Windows 可用 `py -3 serve.py`，也可以双击 `start.bat`。已有仓库的�
 
 ## 从零复现
 
-以下是重新下载原始数据、处理和训练的流程，普通网页演示不需要执行。训练使用 Python 3.11；精确依赖记录在 `requirements.lock`。当前训练环境为 macOS Apple Silicon，CPU 训练；跨平台可按 `requirements.txt` 安装兼容版本。修改前端绘图库适配器时使用 Node.js：`npm ci && npm run build`，前端测试运行 `npm test`。
+下面列出 `setup_demo.py` 所封装的手动流程。完成首次生成后，普通网页演示无需再次执行。训练使用 Python 3.11；精确依赖记录在 `requirements.lock`。当前训练环境为 macOS Apple Silicon，CPU 训练；跨平台可按 `requirements.txt` 安装兼容版本。修改前端绘图库适配器时使用 Node.js：`npm ci && npm run build`，前端测试运行 `npm test`。
 
 ```sh
 python3 -m venv .venv
@@ -128,7 +135,7 @@ artifacts/                  真实训练的 HGNN+ 与 MLP 权重
 reports/                    数据审计、训练指标、运行日志、验证报告
 ```
 
-原始数据、模型权重、日志、用户名映射、密钥和虚拟环境由 `.gitignore` 排除。Git 远程仓库为 `qqiiseven/hypergraph_vis`，只在任务分支同步本项目相关改动。轻量课堂演示可只携带完整 `dist/` 与 `serve.py`，不需要携带 996 MiB 原始包。
+所有数据（包括 `dist/data.json`、`dist/predictions.json`）、模型权重、日志、用户名映射、密钥和虚拟环境由 `.gitignore` 排除。Git 远程仓库为 `qqiiseven/hypergraph_vis`，只在任务分支同步代码。`setup_demo.py` 从公开数据源在本机重新生成数据，不通过 GitHub Release 或其他附件上传数据。GitHub 仓库地址用于下载源码，不是已部署的网页地址。
 
 ## 讲述边界与 AI 使用说明
 
