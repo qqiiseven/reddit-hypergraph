@@ -30,9 +30,9 @@ python3 serve.py
 
 ## 数据与开发
 
-- 数据来源：[Stanford SNAP Reddit Networks](https://snap.stanford.edu/data/web-RedditNetworks.html)。原始数据、生成结果和模型权重均不提交 Git，在本机生成后可离线使用。
+- 数据来源：[Stanford SNAP Reddit Networks](https://snap.stanford.edu/data/web-RedditNetworks.html)。
 - 修改数据处理、训练代码或配置后，运行 `python3 setup_demo.py --rebuild`。
 - 修改超图绘图库适配代码后，运行 `npm ci` 和 `npm run build`；前端测试使用 `npm test`。
 - 超图绘图使用 [Hypergraph Plotter](https://github.com/phileasdg/hypergraph-plotter)，来源与许可证见 [THIRD_PARTY.md](THIRD_PARTY.md)。
 
-“新社区”指此前观察窗口内未出现过的社区，不代表用户真实首次加入。当前支持查看与分析，尚不支持修改网络成员结构。
+Note: “新社区”指此前观察窗口内未出现过的社区，不代表用户真实首次加入。当前支持查看与分析，尚不支持修改网络成员结构。
