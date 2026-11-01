@@ -10,6 +10,8 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 
 def main():
+    for directory in ['data/processed', 'reports', 'artifacts', 'dist']:
+        (ROOT / directory).mkdir(parents=True, exist_ok=True)
     config = json.loads((ROOT / 'config.json').read_text())
     archive = ROOT / 'data/raw/reddit_reply_networks.tar.gz'
     target = ROOT / 'data/raw/selected'
@@ -24,7 +26,7 @@ def main():
             inventory.append({'name': name, 'bytes': member.size})
             if Path(name).stem.lower() in wanted and name.endswith('.json'):
                 dest = target / name
-                if not dest.exists():
+                if not dest.exists() or dest.stat().st_size != member.size:
                     with tf.extractfile(member) as src, dest.open('wb') as out:
                         while chunk := src.read(1024 * 1024):
                             out.write(chunk)

@@ -12,3 +12,4 @@ reports/*.log
 reports/*.png
 .env*
 *.pt
+node_modules/

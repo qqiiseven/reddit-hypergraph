@@ -12,6 +12,8 @@ from model import ParticipationModel, build_snapshot, rank_metrics, baseline_sco
 ROOT=Path(__file__).resolve().parents[1]
 
 def main():
+    for directory in ['reports', 'artifacts', 'dist']:
+        (ROOT / directory).mkdir(parents=True, exist_ok=True)
     cfg=json.loads((ROOT/'config.json').read_text())
     seed=cfg['seed']; random.seed(seed); np.random.seed(seed); torch.manual_seed(seed)
     torch.set_num_threads(4)
