@@ -5,8 +5,9 @@ const fmt = n => Number(n).toLocaleString('zh-CN');
 const pct = n => (100*n).toFixed(1)+'%';
 const colors=['#267f68','#c47b50','#577da5','#8d79a6','#9b963e','#55999a','#a66b87','#698e45','#a88560','#586c87'];
 const methodNames={hgnnp:'HGNN+ · 超图',mlp:'MLP · 无聚合',overlap:'社区重叠',popular:'热门社区'};
-let D,P; const state={view:'map',period:7,user:0,selected:[],graph:'hyper',model:'hgnnp',revealed:false,caseFilter:'all'};
+let D,P; const state={view:'map',period:7,user:0,selected:[],graph:'blob',graphSampling:'diverse',plotSettings:{layout:'spring-embedding',boundaries:true,connections:false},model:'hgnnp',revealed:false,caseFilter:'all'};
 const cache=new Map();
+let activeGraph=null;
 const title={map:['圈子看似分开，<br>人让它们相连。','从共享用户出发，看见社区之间的联系，再把下一期交给模型预测。'],trajectory:['每个人，都有一条<br>自己的跨圈轨迹。','逐期检查真实出现记录。一次新的出现，究竟是延伸兴趣，还是偶然经过？'],bridges:['谁把相距较远的<br>圈子连在一起？','用共同参与衡量连接，不把网络位置直接解释成影响力。'],prediction:['下一期，<br>他会出现在哪个圈子？','先看历史和模型排序，再揭晓真实记录。预测命中与失败，都留在这里。'],methods:['让故事的每一步，<br>都有证据可循。','清晰的数据边界、按时间划分的实验，以及可以复现的模型比较。']};
 function summary(t){
  if(cache.has(t))return cache.get(t);
@@ -18,6 +19,7 @@ function summary(t){
 }
 function seen(u,t){return [...new Set(D.memberships.slice(0,t+1).flatMap(period=>period[u]))];}
 function render(){
+ if(activeGraph){activeGraph.destroy();activeGraph=null;}
  $('#tooltip').style.display='none';
  $('#page-title').innerHTML=title[state.view][0];$('#page-subtitle').textContent=title[state.view][1];
  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===state.view));
@@ -35,19 +37,45 @@ function render(){
 function renderMap(){
  const s=summary(state.period),sel=state.selected;
  const pairs=[];for(let i=0;i<sel.length;i++)for(let j=i+1;j<sel.length;j++)pairs.push({a:sel[i],b:sel[j],n:s.co[sel[i]][sel[j]],j:s.jacc[sel[i]][sel[j]]});pairs.sort((a,b)=>b.j-a.j);
- return `<div class="grid-main"><div class="card"><div class="card-top"><div><h2>一组人，多个圈子</h2><p class="desc">选择 2–10 个社区，查看本期共同参与结构。</p></div><div class="segmented"><button data-graph="hyper" class="${state.graph==='hyper'?'active':''}">局部超图</button><button data-graph="matrix" class="${state.graph==='matrix'?'active':''}">重叠矩阵</button></div></div><div class="pills more">${D.communities.map((c,i)=>`<button data-community="${i}" class="pill ${sel.includes(i)?'selected':''}" aria-pressed="${sel.includes(i)}">${esc(c)}</button>`).join('')}</div><div id="graph"></div></div><div class="card"><div class="card-top"><div><h2>哪些圈子更接近？</h2><p class="desc">选中社区 · 按 Jaccard 交并比排序</p></div><span class="tag">${D.periods[state.period].label}</span></div>${pairs.slice(0,6).map(p=>`<div class="pair-row"><div class="pair-names">${esc(D.communities[p.a])} <span style="color:#99a890">↔</span> ${esc(D.communities[p.b])}<small>${fmt(p.n)} 位共享用户 / ${fmt(s.sizes[p.a]+s.sizes[p.b]-p.n)} 位并集用户</small></div><div class="score">${pct(p.j)}<small>JACCARD</small></div></div>`).join('')}<div class="insight">共享人数大，不一定关系紧密。交并比会同时考虑两个社区的规模，减少热门社区带来的直观误导。</div><p class="note" style="margin-top:15px">统计基于固定的 ${fmt(D.userIds.length)} 人样本，不代表完整 Reddit 社区。点选超图中的用户可查看其轨迹。</p></div></div>`;
+ return `<div class="grid-main"><div class="card"><div class="card-top"><div><h2>一组人，多个圈子</h2><p class="desc">选择 2–10 个社区，查看本期共同参与结构。</p></div><div class="segmented"><button data-graph="blob" class="${state.graph==='blob'?'active':''}">包络超图</button><button data-graph="hyper" class="${state.graph==='hyper'?'active':''}">关联线</button><button data-graph="matrix" class="${state.graph==='matrix'?'active':''}">重叠矩阵</button></div></div><div class="pills more">${D.communities.map((c,i)=>`<button data-community="${i}" class="pill ${sel.includes(i)?'selected':''}" aria-pressed="${sel.includes(i)}">${esc(c)}</button>`).join('')}</div><div id="graph"></div></div><div class="card"><div class="card-top"><div><h2>哪些圈子更接近？</h2><p class="desc">选中社区 · 按 Jaccard 交并比排序</p></div><span class="tag">${D.periods[state.period].label}</span></div>${pairs.slice(0,6).map(p=>`<div class="pair-row"><div class="pair-names">${esc(D.communities[p.a])} <span style="color:#99a890">↔</span> ${esc(D.communities[p.b])}<small>${fmt(p.n)} 位共享用户 / ${fmt(s.sizes[p.a]+s.sizes[p.b]-p.n)} 位并集用户</small></div><div class="score">${pct(p.j)}<small>JACCARD</small></div></div>`).join('')}<div class="insight">共享人数大，不一定关系紧密。交并比会同时考虑两个社区的规模，减少热门社区带来的直观误导。</div><p class="note" style="margin-top:15px">统计基于固定的 ${fmt(D.userIds.length)} 人样本，不代表完整 Reddit 社区。点选超图中的用户可查看其轨迹。</p></div></div>`;
 }
 function drawGraph(){
  const s=summary(state.period),sel=state.selected,container=$('#graph');
  if(state.graph==='matrix'){
  container.innerHTML=`<div class="matrix-wrap" style="margin-top:20px"><table class="matrix"><thead><tr><th></th>${sel.map(c=>`<th class="rot"><span>${esc(D.communities[c])}</span></th>`).join('')}</tr></thead><tbody>${sel.map(a=>`<tr><th>${esc(D.communities[a])}</th>${sel.map(b=>`<td><button aria-label="${esc(D.communities[a])} 与 ${esc(D.communities[b])}，交并比 ${pct(s.jacc[a][b])}" data-tip="${esc(D.communities[a])} ↔ ${esc(D.communities[b])}&#10;共享 ${s.co[a][b]} 人 · Jaccard ${pct(s.jacc[a][b])}" style="background:${a===b?'#d9e1d3':`rgba(36,125,101,${.08+.92*s.jacc[a][b]})`}"></button></td>`).join('')}</tr>`).join('')}</tbody></table></div><div class="graph-note">颜色越深，社区的用户交并比越高。悬停或聚焦格子查看具体数值。</div>`;return;
  }
+ if(state.graph==='blob'){drawBlobGraph(container,s,sel);return;}
  const groups=sel.slice(0,6),users=D.memberships[state.period].map((cs,u)=>({u,cs:cs.filter(c=>groups.includes(c))})).filter(x=>x.cs.length>=2).sort((a,b)=>b.cs.length-a.cs.length||a.u-b.u),chosen=users.slice(0,48);
  const W=720,H=365,positions=groups.map((c,i)=>({c,x:W/2+255*Math.cos(-Math.PI/2+i*2*Math.PI/groups.length),y:H/2+122*Math.sin(-Math.PI/2+i*2*Math.PI/groups.length)}));
  const pts=chosen.map((r,i)=>{const ps=positions.filter(p=>r.cs.includes(p.c));return {...r,x:ps.reduce((a,p)=>a+p.x,0)/ps.length+Math.cos(i*2.4)*60,y:ps.reduce((a,p)=>a+p.y,0)/ps.length+Math.sin(i*2.4)*50};});
  for(let it=0;it<60;it++){for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){let dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,dist=Math.hypot(dx,dy)||1;if(dist<24){const f=(24-dist)*.12;pts[i].x+=dx/dist*f;pts[i].y+=dy/dist*f;pts[j].x-=dx/dist*f;pts[j].y-=dy/dist*f;}}}
  const edges=pts.flatMap(p=>p.cs.map(c=>{const g=positions.find(g=>g.c===c),color=colors[groups.indexOf(c)];return `<line x1="${p.x}" y1="${p.y}" x2="${g.x}" y2="${g.y}" stroke="${color}" stroke-width="1" opacity=".19"/>`;})).join('');
  container.innerHTML=`<div class="graph-shell"><svg viewBox="0 0 ${W} ${H}" role="group" aria-label="社区周期超边与共享用户的关联视图">${edges}${pts.map(p=>`<g role="button" tabindex="0" data-user="${p.u}" data-tip="${D.userIds[p.u]}&#10;本图 ${p.cs.length} 个社区 · 点击查看轨迹"><circle cx="${p.x}" cy="${p.y}" r="${3.6+p.cs.length*.55}" fill="#607f70" stroke="white" stroke-width="1.5"/></g>`).join('')}${positions.map((p,i)=>`<g data-tip="${esc(D.communities[p.c])}&#10;本期样本内 ${s.sizes[p.c]} 人"><rect x="${p.x-9}" y="${p.y-9}" width="18" height="18" rx="4" fill="${colors[i]}"/><text x="${p.x}" y="${p.y+25}" text-anchor="middle">${esc(D.communities[p.c])}</text></g>`).join('')}${chosen.length?'':'<text x="360" y="180" text-anchor="middle">所选社区在本期没有共享用户</text>'}</svg></div><div class="graph-note"><span><i class="dot square"></i>方块：社区 × 本期的超边</span><span><i class="dot"></i>圆点：用户</span></div><p class="note" style="margin-top:8px;margin-bottom:0">显示前 ${groups.length} 个选中社区，以及 ${fmt(users.length)} 位共享用户中参与圈子最多的 ${chosen.length} 位。连线表示归属，位置仅用于布局；统计矩阵使用全部样本。</p>`;
+}
+function graphSample(users, mode, limit=48){
+ if(mode==='bridges')return users.slice(0,limit);
+ // A display-only, deterministic stratification by exact membership combination.
+ // It changes neither data nor the full-cohort statistics on the right.
+ const buckets=new Map();
+ for(const user of users){const key=user.cs.join(',');if(!buckets.has(key))buckets.set(key,[]);buckets.get(key).push(user);}
+ const groups=[...buckets.entries()].sort((a,b)=>a[0].localeCompare(b[0],undefined,{numeric:true}));
+ const result=[];
+ for(let round=0;result.length<limit;round++){
+  let added=false;
+  for(const [,group] of groups){if(group[round]){result.push(group[round]);added=true;if(result.length===limit)break;}}
+  if(!added)break;
+ }
+ return result;
+}
+function drawBlobGraph(container,s,sel){
+ const groups=sel.slice(0,6);
+ const users=D.memberships[state.period].map((cs,u)=>({u,cs:cs.filter(c=>groups.includes(c)),label:D.userIds[u]})).filter(x=>x.cs.length>=2).sort((a,b)=>b.cs.length-a.cs.length||a.u-b.u);
+ const chosen=graphSample(users,state.graphSampling);
+ const communities=groups.map((c,i)=>({c,name:D.communities[c],size:s.sizes[c],color:colors[i]}));
+ const settings=state.plotSettings;
+ container.innerHTML=`<div class="plot-toolbar"><label>布局 <select data-plot-control="layout" aria-label="超图布局"><option value="spring-embedding" ${settings.layout==='spring-embedding'?'selected':''}>力导向</option><option value="radial-embedding" ${settings.layout==='radial-embedding'?'selected':''}>环形</option><option value="grid-layout" ${settings.layout==='grid-layout'?'selected':''}>网格</option></select></label><label>画面取样 <select id="graph-sampling"><option value="diverse" ${state.graphSampling==='diverse'?'selected':''}>归属组合均衡</option><option value="bridges" ${state.graphSampling==='bridges'?'selected':''}>跨圈最多（原版）</option></select></label><label class="check"><input type="checkbox" data-plot-control="boundaries" ${settings.boundaries?'checked':''}>包络</label><label class="check"><input type="checkbox" data-plot-control="connections" ${settings.connections?'checked':''}>辅助曲线</label><button data-plot-export>导出 SVG ↗</button></div><div class="graph-shell plotter-shell"><div class="canvas-caption">${D.periods[state.period].label} / ${chosen.length} 位用户 / ${groups.length} 条社区超边</div><div class="blob-canvas"></div><div class="canvas-tools"><button data-zoom="out" aria-label="缩小超图">−</button><button data-zoom="in" aria-label="放大超图">＋</button><button data-zoom="fit">适应画面</button></div>${chosen.length?'':'<div class="canvas-empty">本期所选社区没有共享用户</div>'}</div><div class="edge-legend">${communities.map(c=>`<button data-edge-focus="${c.c}" style="--edge-color:${c.color}" aria-pressed="false"><i></i>${esc(c.name)} <small>${chosen.filter(u=>u.cs.includes(c.c)).length}</small></button>`).join('')}</div><div class="graph-focus" role="status"></div><p class="note graph-explainer">圆点为用户，色块为社区超边；编号仅用于定位，悬停查看匿名 ID。拖动圆点调整布局，滚轮缩放，拖动空白处平移。辅助曲线表示超边结构，不能当作真实回复关系。</p><p class="note graph-explainer">画面显示前 ${groups.length} 个选中社区的 ${fmt(users.length)} 位共享用户中的 ${chosen.length} 位${state.graphSampling==='diverse'?'（按归属组合均衡取样）':'（按跨圈数量排序）'}。色块面积与取样数量不表示社区规模，右侧统计和矩阵仍使用全部样本。几何包络可能包含非成员，以悬停高亮的真实归属为准。</p>`;
+ activeGraph=window.CrossingHypergraph.mount(container,{users:chosen,communities,period:D.periods[state.period].label,settings:{...settings},onSettings:value=>state.plotSettings={...value},onUser:u=>{state.user=u;setView('trajectory');}});
+ $('#graph-sampling').onchange=e=>{state.graphSampling=e.target.value;render();};
 }
 function userToolbar(extra=''){
  return `<div class="toolbar"><label for="user-search">定位用户</label><input id="user-search" type="text" placeholder="输入匿名 ID" value="${D.userIds[state.user]}" list="user-options"><datalist id="user-options"></datalist><button id="user-go">查看</button><button id="random-user">随机换一位 ↗</button>${extra}<span id="search-error" class="note" role="status"></span></div>`;
@@ -77,7 +105,7 @@ function bindWorkspace(){
  document.querySelectorAll('#workspace [data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));
  document.querySelectorAll('[data-community]').forEach(b=>b.onclick=()=>{const c=+b.dataset.community;if(state.selected.includes(c)){if(state.selected.length>2)state.selected=state.selected.filter(v=>v!==c);}else if(state.selected.length<10){state.selected.push(c);}else{$('#status').textContent='最多同时选择 10 个社区，请先取消一个。';return;}$('#status').textContent='';render();});
  document.querySelectorAll('[data-graph]').forEach(b=>b.onclick=()=>{state.graph=b.dataset.graph;render();});
- document.querySelectorAll('[data-user]').forEach(b=>{b.onclick=()=>{state.user=+b.dataset.user;setView('trajectory');};b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();b.onclick();}};});
+ document.querySelectorAll('[data-user]:not([data-plotter-node])').forEach(b=>{b.onclick=()=>{state.user=+b.dataset.user;setView('trajectory');};b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();b.onclick();}};});
  const input=$('#user-search');if(input){input.oninput=()=>{$('#user-options').innerHTML=D.userIds.filter(id=>id.includes(input.value.trim())).slice(0,12).map(id=>`<option value="${id}"></option>`).join('');};const go=()=>{const u=D.userIds.indexOf(input.value.trim());if(u<0){$('#search-error').textContent='没有找到该 ID，请选择候选值。';return;}state.user=u;state.revealed=false;render();};$('#user-go').onclick=go;input.onkeydown=e=>{if(e.key==='Enter')go();};$('#random-user').onclick=()=>{let ids=D.userIds.map((_,i)=>i);if(state.view==='prediction'&&P&&state.caseFilter!=='all'){const r=P.periods[state.period];ids=ids.filter(u=>{const truth=r.truth[u],hit=r.rankings[state.model][u].some(([c])=>truth.includes(c));return state.caseFilter==='new'?truth.length>0:state.caseFilter==='hit'?hit:truth.length>0&&!hit;});}if(!ids.length){$('#search-error').textContent='此筛选下没有案例。';return;}state.user=ids[Math.floor(Math.random()*ids.length)];state.revealed=false;render();};}
  if($('#model-select'))$('#model-select').onchange=e=>{state.model=e.target.value;state.revealed=false;render();};
  if($('#case-filter'))$('#case-filter').onchange=e=>{state.caseFilter=e.target.value;$('#random-user').click();};

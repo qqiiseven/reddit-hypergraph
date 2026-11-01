@@ -4,12 +4,13 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {JSDOM} from 'jsdom';
 const root=new URL('../',import.meta.url);
-const [html,js,data,predictions]=await Promise.all(['dist/index.html','dist/app.js','dist/data.json','dist/predictions.json'].map(p=>readFile(new URL(p,root),'utf8')));
+const [html,js,bundle,data,predictions]=await Promise.all(['dist/index.html','dist/app.js','dist/hypergraph-view.js','dist/data.json','dist/predictions.json'].map(p=>readFile(new URL(p,root),'utf8')));
 const D=JSON.parse(data),P=JSON.parse(predictions);
 async function setup(){
- const dom=new JSDOM(html,{url:'http://localhost/',runScripts:'outside-only'});
+ const dom=new JSDOM(html,{url:'http://localhost/',runScripts:'outside-only',pretendToBeVisual:true});
  dom.window.scrollTo=()=>{};
  dom.window.fetch=async path=>({ok:true,json:async()=>JSON.parse(path==='data.json'?data:predictions)});
+ dom.window.eval(bundle);
  dom.window.eval(js);
  // Let the actual asynchronous loader finish its two fetch continuations.
  await new Promise(resolve=>setImmediate(resolve));
@@ -20,7 +21,7 @@ test('real-data loader renders community graph and matrix',async()=>{
  const dom=await setup(),w=dom.window,d=w.document;
  assert.equal(d.querySelector('#status').textContent,'');
  assert.equal(d.querySelectorAll('[data-community]').length,44);
- assert.equal(d.querySelectorAll('#graph svg rect').length,6);
+ assert.equal(d.querySelectorAll('#graph svg [id$="-blobs-layer"] path').length,6);
  assert.ok(d.querySelectorAll('[data-user]').length>0);
  d.querySelector('[data-graph="matrix"]').click();
  assert.equal(d.querySelectorAll('.matrix tbody tr').length,6);
@@ -75,5 +76,49 @@ test('user lookup errors and valid lookups, model-period switch, and failure-cas
  assert.ok(P.periods['9'].truth[u].length>0);
  assert.ok(!P.periods['9'].rankings.hgnnp[u].some(([c])=>P.periods['9'].truth[u].includes(c)));
  d.querySelector('#reveal').click();assert.equal(d.querySelectorAll('.prediction-row.hit').length,0);
+ dom.window.close();
+});
+
+test('community hover highlights exact members; visual controls preserve membership',async()=>{
+ const dom=await setup(),w=dom.window,d=w.document;
+ const vertices=()=>[...d.querySelectorAll('.blob-canvas .vertex')];
+ const originalIds=vertices().map(el=>+el.dataset.user);
+ const legend=d.querySelector('[data-edge-focus]'),c=+legend.dataset.edgeFocus;
+ legend.click();
+ for(const el of vertices())assert.equal(el.style.opacity,D.memberships[7][+el.dataset.user].includes(c)?'1':'0.12');
+ const layout=d.querySelector('[data-plot-control="layout"]');
+ layout.value='grid-layout';layout.dispatchEvent(new w.Event('change'));
+ assert.deepEqual(vertices().map(el=>+el.dataset.user),originalIds);
+ assert.ok(!d.querySelector('.blob-canvas').innerHTML.includes('NaN'));
+ const before=d.querySelector('[id$="-zoom-transform-layer"]').getAttribute('transform');
+ d.querySelector('[data-zoom="in"]').click();
+ assert.notEqual(d.querySelector('[id$="-zoom-transform-layer"]').getAttribute('transform'),before);
+ const boundaries=d.querySelector('[data-plot-control="boundaries"]');
+ boundaries.checked=false;boundaries.dispatchEvent(new w.Event('change'));
+ assert.equal(d.querySelectorAll('[id$="-blobs-layer"] path').length,0);
+ const sampling=d.querySelector('#graph-sampling');sampling.value='bridges';sampling.dispatchEvent(new w.Event('change'));
+ const selected=[...d.querySelectorAll('[data-community].selected')].map(b=>+b.dataset.community).slice(0,6);
+ const ranked=D.memberships[7].map((cs,u)=>({u,count:cs.filter(c=>selected.includes(c)).length})).filter(r=>r.count>=2).sort((a,b)=>b.count-a.count||a.u-b.u).slice(0,48).map(r=>r.u);
+ assert.deepEqual(vertices().map(el=>+el.dataset.user),ranked);
+ dom.window.close();
+});
+
+test('dragging a vertex does not open a trajectory or change graph membership',async()=>{
+ const dom=await setup(),w=dom.window,d=w.document;
+ const el=d.querySelector('.blob-canvas .vertex'),id=el.dataset.user;
+ const shape=el.querySelector('circle,rect'),xBefore=shape.getAttribute('cx')||shape.getAttribute('x');
+ el.dispatchEvent(new w.MouseEvent('mousedown',{bubbles:true,clientX:80,clientY:100}));
+ w.dispatchEvent(new w.MouseEvent('mousemove',{clientX:120,clientY:140}));
+ w.dispatchEvent(new w.MouseEvent('mouseup'));
+ const moved=d.querySelector(`.blob-canvas .vertex[data-user="${id}"]`);
+ moved.dispatchEvent(new w.MouseEvent('click',{bubbles:true}));
+ assert.ok(d.querySelector('.blob-canvas'));
+ const after=moved.querySelector('circle,rect');
+ assert.notEqual(after.getAttribute('cx')||after.getAttribute('x'),xBefore);
+ const oldSVG=d.querySelector('.blob-canvas svg');
+ clickView(w,'trajectory');
+ const detachedBefore=oldSVG.innerHTML;
+ w.dispatchEvent(new w.MouseEvent('mousemove',{clientX:200,clientY:200}));
+ assert.equal(oldSVG.innerHTML,detachedBefore);
  dom.window.close();
 });

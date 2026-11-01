@@ -4,9 +4,11 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "test": "node --test tests/frontend.test.mjs"
+    "test": "node --test tests/frontend.test.mjs",
+    "build": "esbuild src/hypergraph-view.js --bundle --format=iife --outfile=dist/hypergraph-view.js --legal-comments=inline"
   },
   "devDependencies": {
+    "esbuild": "0.28.2",
     "jsdom": "^26.1.0"
   }
 }
