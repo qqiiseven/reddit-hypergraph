@@ -1,6 +1,6 @@
 {
-  "version": "4d2dc94900dc74",
-  "count": 62,
+  "version": "0bdcf37fb0067c",
+  "count": 63,
   "files": [
     "app.js",
     "fonts/LICENSE.txt",
@@ -63,6 +63,7 @@
     "reddit-map.js",
     "reddit.css",
     "reddit.js",
+    "sidebar.css",
     "styles.css"
   ]
 }

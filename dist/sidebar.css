@@ -1,0 +1,63 @@
+/* Shared navigation for the concept pages and application explorer. */
+.sidebar{font:14px/1.6 Inter,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif;color:#19253b}
+.sidebar .brand{margin:0}
+.sidebar .brand-mark i{box-shadow:none}
+.sidebar .nav-main{flex:none}
+.sidebar .sidebar-rule{background:#e8eef5}
+.sidebar #subnav{border-color:#e8eef5}
+.sidebar footer.sidebar-bottom{color:#94a1b2;font-size:11px;line-height:1.6}
+.sidebar{position:fixed;left:16px;top:16px;bottom:16px;width:206px;display:flex;flex-direction:column;background:#ffffffed;border:1px solid #ffffff;border-radius:20px;padding:24px 14px;z-index:10}
+.sidebar .brand{display:flex;align-items:center;gap:11px;font-size:18px;font-weight:700;padding:0 7px 40px;letter-spacing:-.04em}
+.sidebar .brand small{display:block;letter-spacing:.14em;font-size:8px;color:#96a3b5;font-weight:500;margin-top:3px}
+.sidebar .brand-mark{position:relative;display:block;width:36px;height:40px;flex:none}
+.sidebar .brand-mark i{position:absolute;width:23px;height:23px;border-radius:50%;opacity:.76}
+.sidebar .brand-mark i:nth-child(1){background:#4389ff;left:8px;top:0}
+.sidebar .brand-mark i:nth-child(2){background:#a082ed;left:0;top:12px}
+.sidebar .brand-mark i:nth-child(3){background:#ffb35f;left:1px;top:21px}
+.sidebar .brand-mark i:nth-child(4){background:#1ec7ca;left:15px;top:17px}
+.sidebar .nav-label{font-size:11px;color:#98a5b6;letter-spacing:.08em;margin:0 12px 12px}
+.sidebar .nav-main{padding:15px 13px;display:flex;align-items:center;gap:15px;border-radius:11px;font-size:15px;margin:6px 0}
+.sidebar .nav-main>span:first-child{font-size:13px;font-variant-numeric:tabular-nums}
+.sidebar .nav-main.active{color:#fff;background:#1b2942;box-shadow:0 4px 10px #19253b12}
+.sidebar .nav-main:not(.active):hover{background:#f0f5fb}
+.sidebar .nav-arrow{margin-left:auto;font-size:14px;opacity:.5}
+.sidebar-rule{height:1px;background:#e8eef5;margin:27px 10px 23px}
+.sidebar .sub-link{display:flex;align-items:center;gap:12px;padding:11px 13px;font-size:13px;border-radius:10px;margin:5px 0;color:#61718b}
+.sidebar .sub-link.active{color:#2267cf;background:#eaf3ff;font-weight:600}
+.sidebar .sub-link:hover{background:#f3f6fa}
+.sidebar-bottom{margin-top:auto;padding:15px 9px 0}
+.sidebar .local-status{color:#94a1b2;font-size:11px;margin-bottom:16px}
+.sidebar .local-status>span{display:inline-block;width:6px;height:6px;border-radius:50%;background:#80b8a5;margin-right:9px}
+.sidebar .help-button{display:flex;align-items:center;gap:9px;border:0;padding:0;color:#718099;font-size:12px}
+.sidebar .help-button span{border:1px solid #9aacc0;border-radius:50%;width:18px;height:18px;line-height:17px}
+.sidebar .help-button:hover{background:transparent;color:#235ab1}
+@media(min-width:1650px){.sidebar{width:218px}}
+@media(max-width:1180px){.sidebar{width:180px;padding:22px 10px}
+.sidebar .brand{font-size:16px;gap:7px}
+.sidebar .brand small{font-size:7px}}
+@media(max-width:960px){.sidebar{position:relative;inset:auto;width:auto;margin:12px;padding:12px 16px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;border-radius:14px}
+.sidebar .brand{padding:0}
+.sidebar .brand small,.sidebar .nav-label,.sidebar-rule,.sidebar-bottom,.sidebar .nav-arrow{display:none}
+.sidebar nav:first-of-type{display:flex;gap:8px}
+.sidebar .nav-main{padding:9px 12px;margin:0;font-size:13px;gap:8px}
+.sidebar #subnav{grid-column:1/-1;display:flex;border-top:1px solid #e8eef5;padding-top:9px;gap:9px}
+.sidebar .sub-link{padding:7px 11px;margin:0;font-size:12px}
+.sidebar .sub-link svg{width:15px}}
+@media(max-width:680px){.sidebar{grid-template-columns:1fr}
+.sidebar nav:first-of-type{grid-row:2}
+.sidebar .brand{font-size:16px}
+.sidebar .brand-mark{transform:scale(.85);transform-origin:left center;width:30px}}
+.sidebar{overflow-y:auto}
+.sidebar>*{flex-shrink:0}
+@media(max-width:960px){.sidebar{grid-template-columns:minmax(0,1fr)}
+.sidebar nav:first-of-type{flex-wrap:wrap;min-width:0}
+.sidebar #subnav{flex-wrap:wrap;min-width:0}
+.sidebar .nav-main{white-space:nowrap}}
+
+/* Match content offset to the shared sidebar without changing application cards. */
+.shared-shell main{margin-left:240px;padding:27px 24px 18px 5px;max-width:1900px}
+@media(min-width:1650px){.shared-shell main{margin-left:250px;padding-left:15px;padding-right:32px}}
+@media(max-width:1180px){.shared-shell main{margin-left:210px;padding-right:15px}}
+@media(max-width:960px){.shared-shell main{margin:0;padding:10px 14px 20px}}
+
+@media(max-width:720px){.sidebar .nav-main{font-size:12px;padding:8px 10px;gap:6px}.sidebar nav:first-of-type{gap:3px}.sidebar #subnav{flex-wrap:wrap;gap:2px}.sidebar .sub-link{font-size:11px;padding:7px}}
