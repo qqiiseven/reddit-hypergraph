@@ -1,0 +1,49 @@
+03 / 应用探索 · 本地修改指南
+
+入口：
+  http://localhost:4173/propagation-paper.html#propagation
+  http://localhost:4173/propagation-paper.html#hypergraph-rag
+  运行：python3 -m http.server 4173 --bind 127.0.0.1 --directory dist
+  两个案例共用 03 页面，支持标签切换、浏览器前进后退与直接链接。
+
+群体传播：
+  dist/paper-network.js：2,000 人全网计算、96 人局部视窗、四图同步播放。
+  dist/paper-rsc.js、paper-rsc-worker.js、propagation-model.js：网络与传播模型。
+  dist/paper-results.js、paper-assets/：论文图 3 对照。
+  当前人数显示为“当前参与 / 2,000 人”；本段净变化只比较段首与段末人数。
+  切换到 RAG 时暂停播放，保留当前参数和进度。
+
+超图 RAG · 证据工作台：
+  dist/propagation-paper.html：共享问题栏、三图并排、共用证据栏、事实角色、原文高亮。
+  dist/hypergraph-rag.js：cases、nodes、角色与事实；三图同步回放、各方法独立补齐证据、三图 SVG 导出。
+  海洋资助：虚构结构示例，三份预设证据包，不是方法实测。普通 RAG 可补齐资助原文，图路径可回查年份。
+  车站案例：HyperRAG 2026 Fig. 6。ToG 三条二元关系、HyperRetriever 两条完整事实，都到达目标。
+  该论文未公布此题普通 RAG 轨迹，界面显示未报告，不补造结果。
+  dist/hypergraph-rag.css：白底、蓝青色；三幅证据图＋右侧详情，底部 2×2 指标图。
+  四张结果图常驻：回答质量；Token 与 F1；生成耗时与费用双列；2026 超图 / 二元结构消融。
+  完整数值和原始效率图收在底部可展开区域；主对照无需切换标签。
+  设计参考 RAGExplorer 的并排诊断与指标对齐、XGraphRAG 的证据与原文联动。
+  dist/rag-benchmark.json：HyperGraphRAG 2025 Table 2 Overall 回答质量，保留七种方法与五个领域。
+  dist/rag-research-data.json：2025 Fig. 6(a) 上下文 token，Table 3 生成耗时/费用；2026 Table 3 消融、Fig. 3 耗时约值。
+  2025：StandardRAG 2,521 token；HyperGraphRAG k=60 为 9,156，F1 从 27.9 到 35.4。token 更多，不能说一定更省。
+  2025 Table 3 的 TPQ 是生成阶段每次查询耗时，不能改称纯检索耗时。
+  2026 Fig. 3 的检索耗时与 Hits@10 为坐标约值；没有精确 token 或可逆气泡刻度，token 保留 null。
+  scripts/extract-hyperrag-efficiency.py：从作者公开 Figure 3 PDF 坐标生成约值，记录坐标和刻度。
+  research/hyperrag/：用户指定 arXiv v1 PDF、源文件及公开仓库文件树。
+  dist/rag-assets/：作者原始效率图与案例图；CC BY 4.0，页面注明出处。
+  2026 Table 3 沿用原表 AVG，未自行重算；其 AVG 与逐行简单均值存在出入，界面提醒核对。
+  无模型训练、在线推理或 API 消耗。公开结果、图中约值与教学证据包分开呈现。
+
+验证：
+  scripts/check-rag.cjs：三图同时可见、四图 2×2、独立补证、原文与角色、同步步骤、论文案例、各类数值、播放暂停、三图导出、4 种屏宽。
+  scripts/check-paper-results.cjs：传播状态与计数、参数、回放和论文图表。
+  浏览器检查使用本机 Playwright；脚本顶部指定依赖路径。
+
+参考：
+  https://github.com/Thymezzz/RAGExplorer
+  https://gk0wk.github.io/XGraphRAG/
+  https://github.com/LHRLAB/HyperGraphRAG
+  https://proceedings.neurips.cc/paper_files/paper/2025/file/df55ee6e59f8ac4a625219e11fe9ddba-Paper-Conference.pdf
+  https://doi.org/10.1038/s41467-019-10431-6
+
+旧 Reddit 实验仍保留源文件；旧修改指南保存在 design/reddit-v5-edit-notes.txt。

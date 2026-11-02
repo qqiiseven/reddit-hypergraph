@@ -1,15 +1,33 @@
+# Local dependencies and configuration
+node_modules/
 .venv/
+venv/
 __pycache__/
-*.pyc
+*.py[cod]
+.env
+.env.*
+!.env.example
+config.local.*
+*.local.json
+*.pem
+*.key
+.aws/
+.codex/
+.agents/
 .DS_Store
+
+# Raw data, model artifacts, logs, and generated deliverables
 data/
 artifacts/
-tmp/
-dist/data.json
-dist/predictions.json
-reports/*.json
-reports/*.log
-reports/*.png
-.env*
+logs/
+*.log
 *.pt
-node_modules/
+*.pth
+tmp/
+output/
+preview/
+reports/
+MANIFEST.json
+*.zip
+
+# dist/ contains the source and small public teaching assets; keep it tracked.

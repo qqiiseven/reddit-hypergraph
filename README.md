@@ -1,36 +1,32 @@
-# Reddit-hypergraph📕
+# 超图实验室 · v2
 
-一个真实 Reddit 数据驱动的交互式超图探索项目：**哪些社区通过同一批人相连，这些人下一期又会出现在哪里？**
+用交互网页理解超图：结构与关联矩阵、共同事件、群体传播、RAG 证据、派对侦探和森林露营划分实验。
 
-## 主要功能
+本分支 `v2/hypergraph-lab` 从 Reddit 数据分析版本的提交 `1d2c3a1ddb6aa074c3a53b3796bd10c6f7b61a7c` 延续。旧版保留在 `task/reddit-hypergraph` 分支。v2 侧重概念教学与交互实验，不包含旧版 Reddit 数据处理和 HGNN+ 训练流程。
 
-- **圈层地图**：查看社区超图和共享用户，支持拖动、缩放及重叠矩阵。
-- **参与轨迹**：查看用户在不同时间段出现于哪些社区。
-- **跨圈连接者**：找出连接多个社区的用户。
-- **下一期预测**：比较 HGNN+、MLP 和两种基线，揭晓真实下一期记录。
+## 运行
 
-当前使用 44 个社区、8,000 名用户、11 个四周观察窗口的数据。
-
-## 快速开始
-
-推荐使用 **Python 3.11**，无需 GPU。首次初始化会自动安装依赖、下载约 **996 MiB** 原始数据并在本地处理和训练，请预留至少 **4 GB** 磁盘空间。
+需要 Python 3，无第三方运行依赖：
 
 ```bash
-git clone https://github.com/qqiiseven/hypergraph_vis.git
-cd hypergraph_vis
-python3 setup_demo.py
-python3 serve.py
+git clone --branch v2/hypergraph-lab https://github.com/qqiiseven/reddit-hypergraph.git
+cd reddit-hypergraph
+python3 launch.py
 ```
 
-打开 **http://127.0.0.1:8765/** 即可使用。Windows 可将 `python3` 替换为 `py -3.11`。
+默认打开 http://127.0.0.1:4173/ ，端口占用时自动尝试 4174–4183。Windows 可双击 `START-WINDOWS.bat`。不要直接双击 HTML，JSON 加载及 Worker 需要本地 HTTP 服务。
 
-以后只需运行 `python3 serve.py`，无需重复初始化。端口被占用时使用 `python3 serve.py --port 8766`。
+## 源码与验证
 
-## 数据与开发
+- `dist/`：可直接修改的 HTML、CSS、JavaScript，以及页面所需的小型教学数据、论文图表和字体。
+- `dist/app.js`：首页概念与用途交互；`dist/hypergraph-rag.js`：RAG 证据展示。
+- `dist/lab.js`、`dist/party.js`：结构工作台与派对侦探。
+- `dist/partition.js`、`dist/partition-model.js`：森林露营界面与划分算法。
+- `tests/`：模型、传播、划分、游戏和离线资源测试。
+- `scripts/`：缓存构建、论文数据提取、报告和提交包生成工具。
 
-- 数据来源：[Stanford SNAP Reddit Networks](https://snap.stanford.edu/data/web-RedditNetworks.html)。
-- 修改数据处理、训练代码或配置后，运行 `python3 setup_demo.py --rebuild`。
-- 修改超图绘图库适配代码后，运行 `npm ci` 和 `npm run build`；前端测试使用 `npm test`。
-- 超图绘图使用 [Hypergraph Plotter](https://github.com/phileasdg/hypergraph-plotter)，来源与许可证见 [THIRD_PARTY.md](THIRD_PARTY.md)。
+安装 Node.js 后运行 `npm test`；当前 32 项测试通过。修改网页后运行 `npm run offline:build` 更新离线缓存，再运行测试。运行网页无需 npm install。
 
-Note: “新社区”指此前观察窗口内未出现过的社区，不代表用户真实首次加入。当前支持查看与分析，尚不支持修改网络成员结构。
+传播与划分算法在本地执行；RAG 页面展示预设证据和论文数据，不调用模型 API、不重跑论文训练。原始数据、环境配置、密钥、日志、生成报告和临时预览不纳入版本管理。
+
+详细操作见 `先读我.txt`、`趣味版游玩说明.md` 和网页中的操作文档。旧说明提到的 `output/` 报告、`preview/` 截图为本地产物，不随 Git 克隆提供；报告生成需要另行准备截图及 Python 依赖。
