@@ -29,7 +29,7 @@
     host.innerHTML='<section class="panel rm-panel" aria-label="Reddit 圈层地图">'+
       '<div class="rm-heading"><div><span class="r-kicker">COMMUNITY MAP / 真实群体结构</span><h2>一组人，多个圈子</h2><p>选择 2–10 个社区，查看同一期的共同参与结构。</p></div><div class="rm-view-switch" role="group" aria-label="地图表示">'+
       [['hull','包络超图'],['lines','关联线'],['matrix','重叠矩阵']].map(([v,label])=>button('view',label,'data-value="'+v+'" aria-pressed="'+(state.view===v)+'"')).join('')+'</div></div>'+
-      '<div class="rm-period"><div><strong>'+esc(p.label)+' · 第 '+(state.period+1)+' 期</strong><span>'+esc(p.start)+' — '+esc(p.end)+'</span></div><input id="rm-period" aria-label="观察窗口" aria-describedby="rm-period-help" type="range" min="0" max="'+(data.periods.length-1)+'" value="'+state.period+'"><div class="rm-period-ticks">'+data.periods.map((p,i)=>button('period',esc(p.label),'data-value="'+i+'" aria-pressed="'+(i===state.period)+'" title="第 '+(i+1)+' 期：'+esc(p.start)+' — '+esc(p.end)+'"')).join('')+'</div><p id="rm-period-help" class="rm-note">P = Period（时间窗口）：P01、P02、P03 分别表示第 1、2、3 期，每期 4 周（28 天）。点击或拖动时间轴，上方显示该期日期，图中展示该期的社区参与记录。</p></div>'+
+      '<div class="rm-period"><div><strong id="rm-period-label">'+esc(p.label)+' · 第 '+(state.period+1)+' 期</strong><span id="rm-period-dates">'+esc(p.start)+' — '+esc(p.end)+'</span></div><input id="rm-period" aria-label="观察窗口" aria-describedby="rm-period-help" aria-valuetext="'+esc(p.label+'：'+p.start+' 至 '+p.end)+'" type="range" min="0" max="'+(data.periods.length-1)+'" value="'+state.period+'"><div class="rm-period-ticks">'+data.periods.map((p,i)=>button('period',esc(p.label),'data-value="'+i+'" aria-pressed="'+(i===state.period)+'" title="第 '+(i+1)+' 期：'+esc(p.start)+' — '+esc(p.end)+'"')).join('')+'</div><p id="rm-period-help" class="rm-note">P = Period（时间窗口）：P01、P02、P03 分别表示第 1、2、3 期，每期 4 周（28 天）。点击或拖动时间轴，上方显示该期日期。此视图每期重新取样；“归属组合均衡”可能选到不同用户但相同的归属组合，因此包络外形也可能相同。</p></div>'+
       '<div class="rm-selection-heading"><span>社区 <b>'+state.selected.length+' / 10</b></span><label>搜索 <input id="rm-search" type="search" placeholder="查找社区" aria-label="搜索社区"></label></div>'+
       '<div class="rm-community-list">'+data.communities.map((name,i)=>{const selected=state.selected.includes(i),color=M.palette[state.selected.indexOf(i)]||'#8293aa';return button('community','<i style="background:'+color+'"></i>'+esc(name),'data-community="'+i+'" aria-pressed="'+selected+'" style="--community-color:'+color+'"');}).join('')+'</div>'+
       '<p id="rm-notice" class="rm-notice" role="status">'+esc(notice)+'</p>'+
@@ -39,8 +39,21 @@
       button('reset-layout','恢复布局','class="rm-reset"')+button('export','导出 SVG ↗','class="rm-export"')+'</div>'+
       '<div id="rm-chart"></div><div id="rm-legend" class="rm-legend"></div><div id="rm-detail" class="rm-detail" role="status" aria-live="polite"></div>'+
       '<p class="rm-note">圆点为用户，色块为社区超边；辅助曲线表示社区归属，不是真实回复关系。拖动节点只调整位置，缩放请使用图内按钮。</p>'+
-      '<p class="rm-note">当前窗口共有 '+fmt(chosen.total)+' 位用户出现在至少两个选中社区；画面最多抽取 48 位，重叠矩阵使用全部 '+fmt(data.userIds.length)+' 位样本。颜色和包络面积不表示社区规模。</p></section>';
+      '<p id="rm-window-summary" class="rm-note">'+windowSummary()+'</p></section>';
     drawChart();bind();
+  }
+  function windowSummary(){return '当前窗口共有 '+fmt(chosen.total)+' 位用户出现在至少两个选中社区；画面最多抽取 48 位，重叠矩阵使用全部 '+fmt(data.userIds.length)+' 位样本。切换时间窗口会重新取样，节点数量可能相同。图中数字是本期绘图编号，跨期不代表同一用户；点击节点可查看匿名用户 ID。颜色和包络面积不表示社区规模。';}
+  function setPeriod(value){
+    const next=Number(value);
+    if(!Number.isInteger(next)||next<0||next>=data.periods.length||next===state.period)return;
+    state.period=next;rebuild();
+    const p=data.periods[next],slider=q('#rm-period');
+    slider.value=String(next);slider.setAttribute('aria-valuetext',p.label+'：'+p.start+' 至 '+p.end);
+    q('#rm-period-label').textContent=p.label+' · 第 '+(next+1)+' 期';
+    q('#rm-period-dates').textContent=p.start+' — '+p.end;
+    q('.rm-period-ticks').querySelectorAll('[data-map=period]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.value===next)));
+    q('#rm-window-summary').textContent=windowSummary();
+    drawChart();
   }
   function svgEl(tag,attrs={},text){const e=document.createElementNS(NS,tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,v);if(text!==undefined)e.textContent=text;return e;}
   function centroid(edge){const ns=geometry.nodes.filter(n=>edge.members.includes(n.id));return ns.length?{x:ns.reduce((s,n)=>s+n.x,0)/ns.length,y:ns.reduce((s,n)=>s+n.y,0)/ns.length}:null;}
@@ -121,7 +134,7 @@
       const node=e.target.closest('[data-map-node]');if(node){state.user=node.dataset.mapNode;state.focus=null;drawArt();showDetail();return;}
       const b=e.target.closest('[data-map]');if(!b)return;const action=b.dataset.map;
       if(action==='community'){const c=+b.dataset.community;if(state.selected.includes(c)){if(state.selected.length<=2){q('#rm-notice').textContent='请至少保留 2 个社区。';return;}state.selected=state.selected.filter(v=>v!==c);}else{if(state.selected.length>=10){q('#rm-notice').textContent='最多选择 10 个社区，请先取消一个。';return;}state.selected.push(c);}notice='';rebuild();render();}
-      if(action==='period'){state.period=+b.dataset.value;rebuild();render();}
+      if(action==='period')setPeriod(b.dataset.value);
       if(action==='view'){state.view=b.dataset.value;if(state.view==='lines'){state.boundaries=false;state.curves=true;}else if(state.view==='hull'){state.boundaries=true;}render();}
       if(action==='focus'){state.focus=state.focus===+b.dataset.value?null:+b.dataset.value;state.user=null;drawArt();q('#rm-legend').querySelectorAll('[data-map=focus]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.value===state.focus)));showDetail();}
       if(action==='matrix-cell'){const s=stats(),a=+b.dataset.a,c=+b.dataset.b;q('#rm-detail').textContent=data.communities[a]+' ↔ '+data.communities[c]+'：共享 '+fmt(s.co[a][c])+' 人 / 并集 '+fmt(s.sizes[a]+s.sizes[c]-s.co[a][c])+' 人 · '+pct(s.jacc[a][c]);}
@@ -131,7 +144,8 @@
       if(action==='export')exportSvg();
     };
     host.onkeydown=e=>{const b=e.target.closest('[data-map][role=button]');if(b&&(e.key==='Enter'||e.key===' ')){e.preventDefault();b.dispatchEvent(new MouseEvent('click',{bubbles:true,detail:0}));}};
-    q('#rm-period').oninput=e=>{state.period=+e.target.value;rebuild();render();q('#rm-period').focus({preventScroll:true});};
+    q('#rm-period').oninput=e=>setPeriod(e.target.value);
+    q('#rm-period').onchange=e=>setPeriod(e.target.value);
     q('#rm-search').oninput=e=>{const value=e.target.value.toLowerCase();host.querySelectorAll('[data-community]').forEach(b=>b.hidden=!data.communities[+b.dataset.community].toLowerCase().includes(value));};
     q('#rm-layout').onchange=e=>{state.layout=e.target.value;geometry=M.layout(chosen.users,state.selected,state.layout);state.zoom=1;drawChart();};
     q('#rm-sampling').onchange=e=>{state.sampling=e.target.value;rebuild();render();};
