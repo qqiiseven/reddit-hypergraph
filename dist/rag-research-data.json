@@ -1,0 +1,141 @@
+{
+  "sources": {
+    "hypergraphrag2025": "https://proceedings.neurips.cc/paper_files/paper/2025/file/df55ee6e59f8ac4a625219e11fe9ddba-Paper-Conference.pdf",
+    "hyperrag2026": "https://arxiv.org/html/2602.14470v1"
+  },
+  "tokens": {
+    "source": "HyperGraphRAG 2025 Figure 6(a), Medicine",
+    "meaning": "retrieved context token count, NOT total API input + output tokens",
+    "standard": {
+      "k": 0,
+      "tokens": 2521,
+      "f1": 27.9
+    },
+    "hyper": [
+      {
+        "k": 20,
+        "tokens": 6057,
+        "f1": 34.4
+      },
+      {
+        "k": 40,
+        "tokens": 7964,
+        "f1": 35.2
+      },
+      {
+        "k": 60,
+        "tokens": 9156,
+        "f1": 35.4
+      },
+      {
+        "k": 80,
+        "tokens": 10073,
+        "f1": 35.5
+      },
+      {
+        "k": 100,
+        "tokens": 10848,
+        "f1": 34.7
+      }
+    ],
+    "graphRAG": null
+  },
+  "costSource": "HyperGraphRAG 2025 Table 3, generation seconds/query, USD/1000 queries, construction seconds/1000 tokens; NOT pure retrieval latency",
+  "costs": [
+    {
+      "method": "NaiveGeneration",
+      "seconds": 0.131,
+      "dollars": 0.059,
+      "buildSeconds": 0
+    },
+    {
+      "method": "StandardRAG",
+      "seconds": 0.147,
+      "dollars": 1.016,
+      "buildSeconds": 0
+    },
+    {
+      "method": "GraphRAG",
+      "seconds": 0.221,
+      "dollars": 1.836,
+      "buildSeconds": 9.272
+    },
+    {
+      "method": "LightRAG",
+      "seconds": 0.359,
+      "dollars": 3.359,
+      "buildSeconds": 5.168
+    },
+    {
+      "method": "PathRAG",
+      "seconds": 0.436,
+      "dollars": 3.496,
+      "buildSeconds": 5.168
+    },
+    {
+      "method": "HippoRAG2",
+      "seconds": 0.24,
+      "dollars": 3.438,
+      "buildSeconds": 2.758
+    },
+    {
+      "method": "HyperGraphRAG",
+      "seconds": 0.256,
+      "dollars": 3.184,
+      "buildSeconds": 3.084
+    }
+  ],
+  "hyperrag2026": {
+    "source": "Table 3 AVG, 1% subset",
+    "full": {
+      "mrr": 36.45,
+      "hits10": 40.59
+    },
+    "binary": {
+      "mrr": 34.15,
+      "hits10": 36.82
+    },
+    "exactEfficiencyTokens": null,
+    "exactRetrievalSeconds": null,
+    "note": "AVG rows copied as reported; not recomputed from domain rows. Figure 3 provides no numeric token labels or bubble scale. No inference runs performed.",
+    "efficiencyFigureApprox": [
+      {
+        "method": "RAPTOR",
+        "retrievalSecondsApprox": 1.4,
+        "hits10Approx": 15.2,
+        "tokens": null
+      },
+      {
+        "method": "HippoRAG",
+        "retrievalSecondsApprox": 1.6,
+        "hits10Approx": 27.6,
+        "tokens": null
+      },
+      {
+        "method": "HyperGraphRAG",
+        "retrievalSecondsApprox": 6.0,
+        "hits10Approx": 43.4,
+        "tokens": null
+      },
+      {
+        "method": "ToG",
+        "retrievalSecondsApprox": 413.9,
+        "hits10Approx": 6.3,
+        "tokens": null
+      },
+      {
+        "method": "HyperMemory",
+        "retrievalSecondsApprox": 44.0,
+        "hits10Approx": 38.2,
+        "tokens": null
+      },
+      {
+        "method": "HyperRetriever",
+        "retrievalSecondsApprox": 2.0,
+        "hits10Approx": 44.2,
+        "tokens": null
+      }
+    ],
+    "efficiencyNote": "Figure 3 coordinate readings rounded to one decimal; not raw experimental records. Token counts cannot be recovered from uncalibrated log-sized bubbles."
+  }
+}

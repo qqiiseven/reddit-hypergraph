@@ -1,14 +1,10 @@
 {
-  "name": "crossing-reddit-hypergraph",
-  "private": true,
+  "name": "hypergraph-latest-team",
   "version": "1.0.0",
-  "type": "module",
+  "private": true,
   "scripts": {
-    "test": "node --test tests/frontend.test.mjs",
-    "build": "esbuild src/hypergraph-view.js --bundle --format=iife --outfile=dist/hypergraph-view.js --legal-comments=inline"
-  },
-  "devDependencies": {
-    "esbuild": "0.28.2",
-    "jsdom": "^26.1.0"
+    "start": "python3 launch.py",
+    "test": "node --test tests/model.test.cjs tests/propagation.test.cjs tests/lab.test.cjs tests/offline.test.cjs tests/partition.test.cjs tests/party.test.cjs",
+    "offline:build": "node scripts/build-offline.cjs"
   }
 }
