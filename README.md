@@ -26,11 +26,11 @@ python3 launch.py
 - `dist/reddit-map.js`、`dist/reddit-map-model.js`、`dist/reddit-map.css`：07 默认的圈层地图，迁入原版的社区选择、三种布局、两种画面取样、包络／辅助曲线开关、重叠矩阵与 SVG 导出。支持全部 2–10 个选中社区，节点可拖动，缩放仅使用按钮；“下一期预测”内的精选案例在 `index.html#reddit-predict/cases`。
 - `dist/reddit-forecast.js`、`dist/reddit-forecast-model.js`、`dist/reddit-forecast.css`：`index.html#reddit-predict` 的完整下一期预测；可从地图点击用户跳入，选择用户、四个已保存窗口和四种方法，先看推荐再揭晓真实下一期。该页包含“自由探索”和“精选案例”两种浏览方式；原版三个案例及其评估在精选案例中保留，两批导出的模型结果分别标注。旧 `#reddit-cases` / `#reddit-results` 链接自动跳转至合并页。
 - `dist/reddit-custom.js`、`dist/reddit-custom-model.js`、`dist/reddit-custom.css`：`index.html#reddit-custom` 的自建数据预测，提供 JSON 模板、导入、字段说明、历史预览和实时 HGNN+ / MLP 对比；`reddit_api.py` 与 `training/reddit/custom_predict.py` 负责本机权重调用。
-- `dist/reddit-prediction-graph.js`、`dist/reddit-prediction-graph.css`：下一期预测、自建预测和预测案例共用的推荐超图。节点是实际输入用户，实线表示最近一期的已知社区归属，橙色虚线表示观察用户可能新增的归属；点击 Top 5 社区切换，分数可展开查看。只展示最多 3 个已参与社区和 9 位其他用户，不改变模型输入或预测。案例图的其他用户仅来自原有讲解子集。
+- `dist/reddit-prediction-graph.js`、`dist/reddit-prediction-graph.css`：下一期预测、自建预测和预测案例共用的推荐超图。节点是实际输入用户，实线表示最近一期的已知社区归属，橙色虚线表示观察用户可能新增的归属；点击 Top 5 社区切换，分数可展开查看。支持拖动节点和方向键移动，轮廓与遮罩同步更新；每个候选社区单独保留当前浏览中的布局，可恢复默认位置。只展示最多 3 个已参与社区和 9 位其他用户，不改变模型输入或预测。案例图的其他用户仅来自原有讲解子集。
 - `tests/`：模型、传播、划分、游戏和离线资源测试。
 - `scripts/`：缓存构建、论文数据提取、报告和提交包生成工具。
 
-安装 Node.js 后运行 `npm test`；当前 49 项测试通过。训练环境中运行 `.venv/bin/python -m unittest discover -s tests -p 'test_reddit_*.py' -v`，当前本机另有 17 项 Python 检查通过。修改网页后运行 `npm run offline:build` 更新离线缓存，再运行测试。运行网页无需 npm install。
+安装 Node.js 后运行 `npm test`；当前 50 项测试通过。训练环境中运行 `.venv/bin/python -m unittest discover -s tests -p 'test_reddit_*.py' -v`，当前本机另有 17 项 Python 检查通过。修改网页后运行 `npm run offline:build` 更新离线缓存，再运行测试。运行网页无需 npm install。
 
 ## 圈层地图与下一期预测的本地数据
 

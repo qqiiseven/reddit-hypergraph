@@ -18,3 +18,11 @@ test('single-user and absent candidate contexts do not invent members',()=>{
   assert.deepEqual(c.peers,[]);assert.deepEqual(c.groups,[]);assert.equal(c.candidateCount,0);
   assert.throws(()=>selectContext([],'target','C'),/找不到/);
 });
+test('prediction dragging updates only bounded display coordinates, never memberships',()=>{
+  const {moveNode}=require('../dist/reddit-prediction-graph.js');
+  const nodes=[{id:'target',x:315,y:250,communities:['A']},{id:'peer',x:535,y:130,communities:['B']}],before=structuredClone(nodes);
+  assert(moveNode(nodes,'target',400,290));assert.deepEqual(nodes[0],{...before[0],x:400,y:290});assert.deepEqual(nodes[1],before[1]);
+  assert(moveNode(nodes,'target',-1000,1000));assert.equal(nodes[0].x,55);assert.equal(nodes[0].y,345);
+  assert(moveNode(nodes,'target',1000,-1000));assert.equal(nodes[0].x,705);assert.equal(nodes[0].y,115);
+  const bounded=structuredClone(nodes);assert.equal(moveNode(nodes,'target',NaN,2),false);assert.equal(moveNode(nodes,'target',2,Infinity),false);assert.equal(moveNode(nodes,'missing',1,2),false);assert.deepEqual(nodes,bounded);
+});
