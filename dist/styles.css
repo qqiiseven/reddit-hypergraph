@@ -134,3 +134,8 @@
  .intro-grid .direction-item h3{font-size:13px}
  .intro-grid .direction-item p{font-size:11px}
 }
+
+/* Keep all seven sections reachable at short heights and narrow widths. */
+.sidebar{overflow-y:auto}
+.sidebar>*{flex-shrink:0}
+@media(max-width:960px){.sidebar{grid-template-columns:minmax(0,1fr)}.sidebar nav:first-of-type{flex-wrap:wrap;min-width:0}#subnav{flex-wrap:wrap;min-width:0}.nav-main{white-space:nowrap}}

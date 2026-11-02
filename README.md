@@ -1,6 +1,6 @@
 # 超图实验室 · v2
 
-用交互网页理解超图：结构与关联矩阵、共同事件、群体传播、RAG 证据、派对侦探和森林露营划分实验。
+用交互网页理解超图：结构与关联矩阵、共同事件、群体传播、RAG 证据、派对侦探、森林露营划分实验和 Reddit 社交探索。
 
 本分支 `v2/hypergraph-lab` 从 Reddit 数据分析版本的提交 `1d2c3a1ddb6aa074c3a53b3796bd10c6f7b61a7c` 延续。旧版保留在 `task/reddit-hypergraph` 分支。v2 侧重概念教学与交互实验，不包含旧版 Reddit 数据处理和 HGNN+ 训练流程。
 
@@ -22,6 +22,7 @@ python3 launch.py
 - `dist/app.js`：首页概念与用途交互；`dist/hypergraph-rag.js`：RAG 证据展示。
 - `dist/lab.js`、`dist/party.js`：结构工作台与派对侦探。
 - `dist/partition.js`、`dist/partition-model.js`：森林露营界面与划分算法。
+- `dist/reddit.js`、`dist/reddit-data.js`：07 Reddit 社交（`index.html#reddit`），复用首页布局，展示已有真实案例、模型预测对比和整体评估；目前为导出结果回放，不进行实时训练或社交行为模拟。
 - `tests/`：模型、传播、划分、游戏和离线资源测试。
 - `scripts/`：缓存构建、论文数据提取、报告和提交包生成工具。
 

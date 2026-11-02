@@ -29,7 +29,7 @@
   function renderNav(){
     if(state.page==='reddit'){
       document.querySelectorAll('[data-main]').forEach(a=>{const active=a.dataset.main==='reddit';a.classList.toggle('active',active);active?a.setAttribute('aria-current','page'):a.removeAttribute('aria-current');});
-      $('#subnav').innerHTML='<span class="frontier-nav-caption">Reddit · 真实数据案例</span><a class="sub-link" href="#reddit">群体与推荐</a><a class="sub-link" href="#reddit-results">整体表现</a>';
+      $('#subnav').innerHTML='<span class="frontier-nav-caption">Reddit · 真实数据案例</span><a class="sub-link '+(location.hash==='#reddit-results'?'':'active')+'" href="#reddit">群体与推荐</a><a class="sub-link '+(location.hash==='#reddit-results'?'active':'')+'" href="#reddit-results">整体表现</a>';
       return;
     }
     if(state.page==='frontiers'){
@@ -196,7 +196,6 @@
   }
   function render(){stopMotion();renderNav();if(state.page==='reddit')window.RedditDemo.render($('#main'),{openDialog});else if(state.page==='frontiers')window.HyperFrontiers.render($('#main'),{openDialog});else if(state.page==='composition')renderComposition();else if(state.page==='events')renderEvents();else renderUses();}
   function route(){
-    if(['#reddit','#reddit-results'].includes(location.hash)){location.replace('propagation-paper.html');return;}
     const hash=location.hash.slice(1),next=['reddit','reddit-results'].includes(hash)?'reddit':/^frontiers(?:-(?:images|generation|evidence|vision))?$/.test(hash)?'frontiers':hash==='events'?'events':['uses','reinforcement'].includes(hash)?'uses':'composition';
     if(state.page!==next){state.node=null;state.zoom=1;}state.page=next;render();
     if(hash==='reinforcement'||hash==='reddit-results'||hash.startsWith('frontiers-'))requestAnimationFrame(()=>document.getElementById(hash)?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'}));else window.scrollTo(0,0);
