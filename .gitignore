@@ -29,6 +29,7 @@ preview/
 reports/
 MANIFEST.json
 dist/reddit-network.json
+dist/reddit-predictions.json
 *.zip
 
 # dist/ contains the source and small public teaching assets; keep it tracked.

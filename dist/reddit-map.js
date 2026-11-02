@@ -93,7 +93,7 @@
   }
   function showDetail(){
     const el=q('#rm-detail');if(!el)return;
-    if(state.user!==null){const n=geometry.nodes.find(n=>n.id===state.user);if(n){el.textContent=n.number+' · '+n.label+' — 本图归属：'+n.cs.map(c=>data.communities[c]).join('、');return;}}
+    if(state.user!==null){const n=geometry.nodes.find(n=>n.id===state.user);if(n){el.textContent=n.number+' · '+n.label+' — 本图归属：'+n.cs.map(c=>data.communities[c]).join('、');el.insertAdjacentHTML('beforeend',button('predict','查看下一期预测 →','class="rm-predict-link"'));return;}}
     if(state.focus!==null){const edge=geometry.edges.find(e=>e.c===state.focus);el.textContent=data.communities[edge.c]+'：当前画面 '+edge.members.length+' 人，本期样本内 '+fmt(stats().sizes[edge.c])+' 人。';return;}
     el.textContent='点击节点或社区标签查看真实归属；拖动节点整理画面。';
   }
@@ -127,6 +127,7 @@
       if(action==='matrix-cell'){const s=stats(),a=+b.dataset.a,c=+b.dataset.b;q('#rm-detail').textContent=data.communities[a]+' ↔ '+data.communities[c]+'：共享 '+fmt(s.co[a][c])+' 人 / 并集 '+fmt(s.sizes[a]+s.sizes[c]-s.co[a][c])+' 人 · '+pct(s.jacc[a][c]);}
       if(action==='reset-layout'){geometry=M.layout(chosen.users,state.selected,state.layout);state.zoom=1;drawChart();}
       if(action==='zoom-in'||action==='zoom-out'||action==='fit'){state.zoom=action==='fit'?1:Math.max(.7,Math.min(2.5,state.zoom*(action==='zoom-in'?1.2:1/1.2)));drawArt();}
+      if(action==='predict'&&state.user!==null)window.RedditForecast.openUser(data.userIds[+state.user],state.period);
       if(action==='export')exportSvg();
     };
     host.onkeydown=e=>{const b=e.target.closest('[data-map][role=button]');if(b&&(e.key==='Enter'||e.key===' ')){e.preventDefault();b.dispatchEvent(new MouseEvent('click',{bubbles:true,detail:0}));}};
