@@ -29,7 +29,7 @@
   function renderNav(){
     if(state.page==='reddit'){
       document.querySelectorAll('[data-main]').forEach(a=>{const active=a.dataset.main==='reddit';a.classList.toggle('active',active);active?a.setAttribute('aria-current','page'):a.removeAttribute('aria-current');});
-      $('#subnav').innerHTML='<span class="frontier-nav-caption">Reddit · '+(location.hash==='#reddit-custom'?'自建数据':'真实数据')+'</span>'+[['reddit','圈层地图'],['reddit-predict','下一期预测'],['reddit-custom','自建数据预测'],['reddit-cases','预测案例']].map(([id,label])=>'<a class="sub-link '+(location.hash==='#'+id?'active':'')+'" href="#'+id+'">'+label+'</a>').join('');
+      $('#subnav').innerHTML='<span class="frontier-nav-caption">Reddit · '+(location.hash==='#reddit-custom'?'自建数据':'真实数据')+'</span>'+[['reddit','圈层地图'],['reddit-predict','下一期预测'],['reddit-cases','预测案例'],['reddit-custom','自建数据预测']].map(([id,label])=>'<a class="sub-link '+(location.hash==='#'+id?'active':'')+'" href="#'+id+'">'+label+'</a>').join('');
       return;
     }
     if(state.page==='frontiers'){
