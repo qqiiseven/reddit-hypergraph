@@ -23,8 +23,8 @@ python3 launch.py
 - `dist/lab.js`、`dist/party.js`：结构工作台与派对侦探。
 - `dist/partition.js`、`dist/partition-model.js`：森林露营界面与划分算法。
 - `dist/reddit.js`、`dist/reddit-data.js`：07 Reddit 社交（`index.html#reddit`），复用首页布局，展示已有真实案例、模型预测对比和整体评估；目前为导出结果回放，不进行实时训练或社交行为模拟。超边沿用 01 的成员包围轮廓，节点可拖动或用方向键移动，支持恢复布局；`dist/reddit-graph-model.js` 单独管理位置，保持真实成员关系不变。
-- `dist/reddit-map.js`、`dist/reddit-map-model.js`、`dist/reddit-map.css`：07 默认的圈层地图，迁入原版的社区选择、三种布局、两种画面取样、包络／辅助曲线开关、重叠矩阵与 SVG 导出。支持全部 2–10 个选中社区，节点可拖动，缩放仅使用按钮；预测案例在 `index.html#reddit-cases`。
-- `dist/reddit-forecast.js`、`dist/reddit-forecast-model.js`、`dist/reddit-forecast.css`：`index.html#reddit-predict` 的完整下一期预测；可从地图点击用户跳入，选择用户、四个已保存窗口和四种方法，先看推荐再揭晓真实下一期。原版三个案例及其评估保留在“预测案例”，两批导出的模型结果分别展示。
+- `dist/reddit-map.js`、`dist/reddit-map-model.js`、`dist/reddit-map.css`：07 默认的圈层地图，迁入原版的社区选择、三种布局、两种画面取样、包络／辅助曲线开关、重叠矩阵与 SVG 导出。支持全部 2–10 个选中社区，节点可拖动，缩放仅使用按钮；“下一期预测”内的精选案例在 `index.html#reddit-predict/cases`。
+- `dist/reddit-forecast.js`、`dist/reddit-forecast-model.js`、`dist/reddit-forecast.css`：`index.html#reddit-predict` 的完整下一期预测；可从地图点击用户跳入，选择用户、四个已保存窗口和四种方法，先看推荐再揭晓真实下一期。该页包含“自由探索”和“精选案例”两种浏览方式；原版三个案例及其评估在精选案例中保留，两批导出的模型结果分别标注。旧 `#reddit-cases` / `#reddit-results` 链接自动跳转至合并页。
 - `dist/reddit-custom.js`、`dist/reddit-custom-model.js`、`dist/reddit-custom.css`：`index.html#reddit-custom` 的自建数据预测，提供 JSON 模板、导入、字段说明、历史预览和实时 HGNN+ / MLP 对比；`reddit_api.py` 与 `training/reddit/custom_predict.py` 负责本机权重调用。
 - `dist/reddit-prediction-graph.js`、`dist/reddit-prediction-graph.css`：下一期预测、自建预测和预测案例共用的推荐超图。节点是实际输入用户，实线表示最近一期的已知社区归属，橙色虚线表示观察用户可能新增的归属；点击 Top 5 社区切换，分数可展开查看。只展示最多 3 个已参与社区和 9 位其他用户，不改变模型输入或预测。案例图的其他用户仅来自原有讲解子集。
 - `tests/`：模型、传播、划分、游戏和离线资源测试。
