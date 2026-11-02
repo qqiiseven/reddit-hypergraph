@@ -23,10 +23,23 @@ python3 launch.py
 - `dist/lab.js`、`dist/party.js`：结构工作台与派对侦探。
 - `dist/partition.js`、`dist/partition-model.js`：森林露营界面与划分算法。
 - `dist/reddit.js`、`dist/reddit-data.js`：07 Reddit 社交（`index.html#reddit`），复用首页布局，展示已有真实案例、模型预测对比和整体评估；目前为导出结果回放，不进行实时训练或社交行为模拟。超边沿用 01 的成员包围轮廓，节点可拖动或用方向键移动，支持恢复布局；`dist/reddit-graph-model.js` 单独管理位置，保持真实成员关系不变。
+- `dist/reddit-map.js`、`dist/reddit-map-model.js`、`dist/reddit-map.css`：07 默认的圈层地图，迁入原版的社区选择、三种布局、两种画面取样、包络／辅助曲线开关、重叠矩阵与 SVG 导出。支持全部 2–10 个选中社区，节点可拖动，缩放仅使用按钮；预测案例在 `index.html#reddit-cases`。
 - `tests/`：模型、传播、划分、游戏和离线资源测试。
 - `scripts/`：缓存构建、论文数据提取、报告和提交包生成工具。
 
-安装 Node.js 后运行 `npm test`；当前 35 项测试通过。修改网页后运行 `npm run offline:build` 更新离线缓存，再运行测试。运行网页无需 npm install。
+安装 Node.js 后运行 `npm test`；当前 39 项测试通过。修改网页后运行 `npm run offline:build` 更新离线缓存，再运行测试。运行网页无需 npm install。
+
+## 圈层地图的本地数据
+
+完整社区数据不提交 Git。已有旧项目 `dist/data.json` 时运行：
+
+```bash
+python3 scripts/prepare-reddit-map.py --source /path/to/old-project/dist/data.json
+```
+
+脚本只导出匿名用户标识、社区、窗口和归属记录到被忽略的 `dist/reddit-network.json`，并记录源文件 SHA-256。也可在地图缺少数据时直接通过页面载入旧 `data.json` 或该导出文件。网页不会下载原始归档或重新训练模型。
+
+地图的社区人数和 Jaccard 使用完整选定样本；最多 48 个绘图节点是显示取样，不影响统计。数据文件不属于安装离线缓存的必需资源；通过本地服务成功载入后，才缓存该文件以供断开服务时使用。仅克隆代码也可打开其余页面和已有预测案例。
 
 传播与划分算法在本地执行；RAG 页面展示预设证据和论文数据，不调用模型 API、不重跑论文训练。原始数据、环境配置、密钥、日志、生成报告和临时预览不纳入版本管理。
 

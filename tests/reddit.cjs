@@ -11,7 +11,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
  page.on('pageerror',e=>errors.push(e.message));
  fs.mkdirSync(path.resolve(__dirname,'../preview'),{recursive:true});
  const base=process.env.PREVIEW_URL||'http://127.0.0.1:4173/';
- await page.goto(base+'#reddit');await page.locator('#reddit-graph').waitFor();await page.evaluate(()=>document.fonts.ready);
+ await page.goto(base+'#reddit-cases');await page.locator('#reddit-graph').waitFor();await page.evaluate(()=>document.fonts.ready);
  assert.equal(D.cases.length,3);
  assert.equal(await page.locator('[data-reddit=reveal], .r-sample-note').count(),0);
  assert.deepEqual([...new Set(D.cases.map(c=>c.current.length))].sort((a,b)=>a-b),[3,4]);
@@ -89,7 +89,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
  }
  await page.goto(base+'#reddit-results');await page.locator('#reddit-results').waitFor();
  for(const route of ['composition','uses','frontiers','reddit']){await page.goto(base+'#'+route);await page.locator('h1').waitFor();}
- await page.goto('file://'+path.resolve(__dirname,'../dist/index.html')+'#reddit');await page.locator('#reddit-graph').waitFor();
+ await page.goto('file://'+path.resolve(__dirname,'../dist/index.html')+'#reddit-cases');await page.locator('#reddit-graph').waitFor();
  assert.deepEqual(errors,[]);await browser.close();
  console.log('PASS: all real rankings and outcomes, member-following hulls, drag, layout reset and retained positions, outcomes visible by default, baseline switching, observed co-membership, aggregation steps, metric values, dialogs, 3 screen widths, deep links, offline load.');
 })().catch(e=>{console.error(e);process.exit(1);});
