@@ -20,3 +20,14 @@
 .r-graph.r-graph-four{aspect-ratio:700/560;max-height:470px;min-height:360px}
 .r-graph-scroll:has(.r-graph-four){max-height:490px}
 @media(max-width:480px){.r-graph.r-graph-four{min-height:260px;max-height:310px}.r-graph-scroll:has(.r-graph-four){max-height:330px}}
+
+/* Member-following hulls share the geometry used by section 01. */
+.r-hull-graph{touch-action:none;user-select:none;min-height:310px;max-height:470px;aspect-ratio:auto}
+.r-hull-graph .r-drag-node{cursor:grab;outline:none}
+.r-hull-graph.is-dragging,.r-hull-graph.is-dragging .r-drag-node{cursor:grabbing}
+.r-hull-graph .r-group-caption{pointer-events:none}
+.r-hull-graph .r-drag-node:focus-visible .r-node-disc{stroke:#4389ff;stroke-width:3}
+.r-hull-graph .r-region:focus-visible{stroke-width:3;stroke-dasharray:6 3;outline:none}
+.r-layout-tools{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.r-layout-tools .r-view-note{margin:10px 0}
+@media(max-width:480px){.r-hull-graph{min-height:230px;max-height:330px}.r-layout-tools{align-items:flex-start}.r-layout-tools button{margin-top:10px}}

@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "python3 launch.py",
-    "test": "node --test tests/model.test.cjs tests/propagation.test.cjs tests/lab.test.cjs tests/offline.test.cjs tests/partition.test.cjs tests/party.test.cjs",
+    "test": "node --test tests/model.test.cjs tests/propagation.test.cjs tests/lab.test.cjs tests/offline.test.cjs tests/partition.test.cjs tests/party.test.cjs tests/reddit-graph.test.cjs",
     "offline:build": "node scripts/build-offline.cjs"
   }
 }

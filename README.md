@@ -22,11 +22,11 @@ python3 launch.py
 - `dist/app.js`：首页概念与用途交互；`dist/hypergraph-rag.js`：RAG 证据展示。
 - `dist/lab.js`、`dist/party.js`：结构工作台与派对侦探。
 - `dist/partition.js`、`dist/partition-model.js`：森林露营界面与划分算法。
-- `dist/reddit.js`、`dist/reddit-data.js`：07 Reddit 社交（`index.html#reddit`），复用首页布局，展示已有真实案例、模型预测对比和整体评估；目前为导出结果回放，不进行实时训练或社交行为模拟。
+- `dist/reddit.js`、`dist/reddit-data.js`：07 Reddit 社交（`index.html#reddit`），复用首页布局，展示已有真实案例、模型预测对比和整体评估；目前为导出结果回放，不进行实时训练或社交行为模拟。超边沿用 01 的成员包围轮廓，节点可拖动或用方向键移动，支持恢复布局；`dist/reddit-graph-model.js` 单独管理位置，保持真实成员关系不变。
 - `tests/`：模型、传播、划分、游戏和离线资源测试。
 - `scripts/`：缓存构建、论文数据提取、报告和提交包生成工具。
 
-安装 Node.js 后运行 `npm test`；当前 32 项测试通过。修改网页后运行 `npm run offline:build` 更新离线缓存，再运行测试。运行网页无需 npm install。
+安装 Node.js 后运行 `npm test`；当前 35 项测试通过。修改网页后运行 `npm run offline:build` 更新离线缓存，再运行测试。运行网页无需 npm install。
 
 传播与划分算法在本地执行；RAG 页面展示预设证据和论文数据，不调用模型 API、不重跑论文训练。原始数据、环境配置、密钥、日志、生成报告和临时预览不纳入版本管理。
 

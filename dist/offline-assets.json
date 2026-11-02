@@ -1,6 +1,6 @@
 {
-  "version": "b4f2eea5a9ab3c",
-  "count": 55,
+  "version": "07cad0614c0efc",
+  "count": 56,
   "files": [
     "app.js",
     "fonts/LICENSE.txt",
@@ -54,6 +54,7 @@
     "rag-benchmark.json",
     "rag-research-data.json",
     "reddit-data.js",
+    "reddit-graph-model.js",
     "reddit.css",
     "reddit.js",
     "styles.css"
