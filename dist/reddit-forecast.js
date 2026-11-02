@@ -29,7 +29,7 @@
     })().catch(e=>{notice=e.message;});
     await loading;if(!host?.isConnected)return;if(predictions)render();else missing(notice);
   }
-  function tags(ids){return ids.map(c=>'<span>r/'+esc(network.communities[c])+'</span>').join('')||'<span class="rf-empty-tag">没有观察记录</span>';}
+  function tags(ids){return ids.map(c=>'<span>'+esc(network.communities[c])+'</span>').join('')||'<span class="rf-empty-tag">没有观察记录</span>';}
   function render(){
     if(!host?.isConnected)return;
     const t=state.cutoff,u=state.user,r=M.record(network,predictions,u,t,state.method),from=network.periods[t],to=network.periods[t+1],validation=t===predictions.metrics.config.validation_cutoff;
@@ -40,7 +40,7 @@
       '<div class="rf-history-heading"><strong>已观察到 '+r.seen.length+' 个社区</strong><span>'+esc(network.userIds[u])+'</span></div><div class="rf-tags">'+tags(r.seen)+'</div><p class="rm-note">这些历史社区已排除在推荐候选之外。“新增”指此前窗口内没有观察到，并非真实首次加入。</p></section>'+
       '<div class="rf-columns"><section class="panel rf-card"><div class="rf-card-heading"><div><span class="r-kicker">01 / 看预测</span><h2>模型给出的下一站</h2></div><select id="rf-model" aria-label="预测模型">'+Object.entries(methods).map(([v,label])=>'<option value="'+v+'" '+(v===state.method?'selected':'')+'>'+label+'</option>').join('')+'</select></div>'+
       '<p class="rf-method-note">'+(state.method==='hgnnp'?'结合个人历史和社区群体聚合。':state.method==='mlp'?'使用个人历史特征，不做群体聚合。':state.method==='overlap'?'根据历史社区的用户重叠程度排序。':'根据近期社区参与规模排序。')+'</p>'+
-      '<ol class="rf-rankings">'+r.rankings.map(([c,score],i)=>'<li><span class="rf-number">'+String(i+1).padStart(2,'0')+'</span><div><strong>r/'+esc(network.communities[c])+'</strong><small>排序分数 '+score.toFixed(3)+'</small></div><span class="rf-outcome '+(state.revealed&&r.truth.includes(c)?'hit':'')+'">'+(state.revealed?(r.truth.includes(c)?'✓ 真实新增':'未观察到'):'待核验')+'</span></li>').join('')+'</ol>'+
+      '<ol class="rf-rankings">'+r.rankings.map(([c,score],i)=>'<li><span class="rf-number">'+String(i+1).padStart(2,'0')+'</span><div><strong>'+esc(network.communities[c])+'</strong><small>排序分数 '+score.toFixed(3)+'</small></div><span class="rf-outcome '+(state.revealed&&r.truth.includes(c)?'hit':'')+'">'+(state.revealed?(r.truth.includes(c)?'✓ 真实新增':'未观察到'):'待核验')+'</span></li>').join('')+'</ol>'+
       (!r.rankings.length?'<p class="rf-empty">'+(!r.known?'截止当前窗口没有已知历史，本模型不输出冷启动推荐。':'没有可推荐的未观察社区。')+'</p>':'')+
       '<p class="rm-note">读取已训练结果；分数用于当前模型内排序，不是概率，也不能跨模型比较。</p></section>'+
       '<section class="panel rf-card"><div class="rf-card-heading"><div><span class="r-kicker">02 / 对照真实记录</span><h2>打开真实的下一期</h2></div><span class="rf-split">'+esc(to.label)+'</span></div><p class="rf-method-note">'+esc(to.start)+' — '+esc(to.end)+'</p>'+
