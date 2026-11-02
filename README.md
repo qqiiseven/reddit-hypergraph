@@ -2,7 +2,7 @@
 
 用交互网页理解超图：结构与关联矩阵、共同事件、群体传播、RAG 证据、派对侦探、森林露营划分实验和 Reddit 社交探索。
 
-默认分支 `task/reddit-hypergraph` 现已更新为 v2，包含 07 Reddit 社交页面及缓存修复。旧版 Reddit 数据分析代码可在历史提交 `1d2c3a1ddb6aa074c3a53b3796bd10c6f7b61a7c` 查看。v2 侧重概念教学与交互实验，不包含旧版 Reddit 数据处理和 HGNN+ 训练流程。
+默认分支 `task/reddit-hypergraph` 的 v2 包含 07 Reddit 社交页面及缓存修复。当前任务分支新增 `training/reddit/`，把原版数据处理、HGNN+ / MLP 训练和权重推理迁入 project2；完整步骤见 [训练说明](training/reddit/README.md)。网页浏览不需要安装训练依赖。
 
 ## 运行
 
