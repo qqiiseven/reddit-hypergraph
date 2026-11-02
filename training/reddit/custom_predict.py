@@ -7,20 +7,18 @@ import time
 import numpy as np
 import torch
 
-from common import DATA, ROOT, run_paths, sha256
+from common import ROOT
+from checkpoints import load_source
 from custom_schema import InputError, validate_input
 from infer import rankings
 from model import ParticipationModel, build_snapshot
 
 
-def predict(payload, run_id):
+def predict(payload, run_id, *, root=None):
     started = time.monotonic()
     torch.set_num_threads(4)
-    artifacts, reports = run_paths(run_id)
-    manifest = json.loads((reports / 'manifest.json').read_text())
-    meta_path = DATA / 'viewer-data.json'
-    meta = json.loads(meta_path.read_text())
-    names = meta['communities']
+    source = load_source(ROOT if root is None else root, run_id)
+    names = source['communities']
     validate_input(payload, names)
     users = payload['users']
     periods = len(users[0]['history'])
@@ -33,12 +31,11 @@ def predict(payload, run_id):
     snapshot = build_snapshot(membership, degree, periods - 1)
     outputs = {}
     for method in ['hgnnp', 'mlp']:
-        path = artifacts / f'{method}.pt'
-        if sha256(path) != manifest['outputs'][str(path.relative_to(ROOT))]:
-            raise ValueError('权重文件哈希与训练记录不一致')
-        checkpoint = torch.load(path, map_location='cpu', weights_only=True)
-        if checkpoint['community_names'] != names or checkpoint['viewer_sha256'] != sha256(meta_path):
-            raise ValueError('模型社区字典与当前数据不匹配')
+        checkpoint = torch.load(source['paths'][method], map_location='cpu', weights_only=True)
+        if (checkpoint['community_names'] != names or checkpoint['viewer_sha256'] != source['viewer_sha256']
+                or checkpoint['run_id'] != source['run_id']
+                or checkpoint['training_commit'] != source['training_commit']):
+            raise ValueError('模型社区字典或训练来源与当前模型记录不匹配')
         if checkpoint['model_type'] != method or checkpoint['features'] != snapshot['x'].shape[1]:
             raise ValueError('模型类型或输入特征维数不匹配')
         model = ParticipationModel(checkpoint['features'], len(names), checkpoint['config']['hidden_dim'], method == 'hgnnp')
@@ -57,7 +54,7 @@ def predict(payload, run_id):
     if not degree.any():
         warnings.append('所有回复度数均为 0；模型会按没有发出回复处理，不会自动补出该特征。')
     return {
-        'run_id': run_id, 'training_commit': manifest['commit'], 'history_periods': periods,
+        'run_id': run_id, 'training_commit': source['training_commit'], 'history_periods': periods,
         'target_period': periods + 1, 'period_days': 28, 'cohort_size': len(users),
         'seconds': round(time.monotonic() - started, 3), 'warnings': warnings,
         'users': [{'id': user['id'], 'known': bool(snapshot['known'][u]),

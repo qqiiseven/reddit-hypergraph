@@ -2,11 +2,11 @@
 
 用交互网页理解超图：结构与关联矩阵、共同事件、群体传播、RAG 证据、派对侦探、森林露营划分实验和 Reddit 社交探索。
 
-默认分支 `task/reddit-hypergraph` 的 v2 包含 07 Reddit 社交页面及缓存修复。当前任务分支新增 `training/reddit/`，把原版数据处理、HGNN+ / MLP 训练和权重推理迁入 project2；完整步骤见 [训练说明](training/reddit/README.md)。网页浏览不需要安装训练依赖。
+默认分支 `task/reddit-hypergraph` 的 v2 包含 07 Reddit 社交页面及缓存修复。`training/reddit/` 包含数据处理、HGNN+ / MLP 训练和推理；`models/reddit/` 随仓库提供当前训练权重与必要元数据；完整步骤见 [训练说明](training/reddit/README.md)。网页浏览不需要安装训练依赖。
 
 ## 运行
 
-浏览静态页面需要 Python 3，无第三方运行依赖；“自建数据预测”另外使用 project2 的 `.venv`、PyTorch 和本地训练权重：
+浏览静态页面需要 Python 3，无第三方运行依赖；“自建数据预测”另外使用 project2 的 `.venv`、PyTorch；当前训练好的权重已包含在仓库中：
 
 ```bash
 git clone https://github.com/qqiiseven/reddit-hypergraph.git
@@ -15,6 +15,22 @@ python3 launch.py
 ```
 
 默认打开 http://127.0.0.1:4173/ ，端口占用时自动尝试 4174–4183。Windows 可双击 `START-WINDOWS.bat`。不要直接双击 HTML，JSON 加载及 Worker 需要本地 HTTP 服务。
+
+## 使用已训练模型
+
+首次克隆后，在仓库根目录安装推理依赖，再启动页面：
+
+```bash
+python3.11 -m venv .venv
+.venv/bin/python -m pip install -r training/reddit/requirements.lock
+python3 launch.py
+```
+
+打开「07 Reddit 社交 → 自建数据预测」即可编辑示例并调用 HGNN+ / MLP，无需重新训练或复制原始数据。Windows 对应使用 `.venv\Scripts\python.exe` 安装依赖。
+
+当前公开权重位于 `models/reddit/project2-20261102-001/`，两份合计约 165 KiB，带 SHA-256 校验和有序社区字典。有已激活的本地训练批次时，优先使用该批次；否则使用 `models/reddit/default.json` 指定的公开权重。
+
+完整圈层地图和自由探索中的 8,000 人历史、完整预测文件仍为本地数据，不包含在模型包内；精选案例及自建数据预测可以使用仓库提供的资源运行。
 
 ## 源码与验证
 
@@ -30,7 +46,7 @@ python3 launch.py
 - `tests/`：模型、传播、划分、游戏和离线资源测试。
 - `scripts/`：缓存构建、论文数据提取、报告和提交包生成工具。
 
-安装 Node.js 后运行 `npm test`；当前 50 项测试通过。训练环境中运行 `.venv/bin/python -m unittest discover -s tests -p 'test_reddit_*.py' -v`，当前本机另有 17 项 Python 检查通过。修改网页后运行 `npm run offline:build` 更新离线缓存，再运行测试。运行网页无需 npm install。
+安装 Node.js 后运行 `npm test`；当前 50 项测试通过。训练环境中运行 `.venv/bin/python -m unittest discover -s tests -p 'test_reddit_*.py' -v`，当前本机另有 22 项 Python 检查通过。修改网页后运行 `npm run offline:build` 更新离线缓存，再运行测试。运行网页无需 npm install。
 
 ## 圈层地图与下一期预测的本地数据
 

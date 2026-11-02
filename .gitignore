@@ -33,3 +33,7 @@ dist/reddit-predictions.json
 *.zip
 
 # dist/ contains the source and small public teaching assets; keep it tracked.
+
+# Explicitly published, small inference checkpoints (current validated batch only)
+!models/reddit/project2-20261102-001/hgnnp.pt
+!models/reddit/project2-20261102-001/mlp.pt

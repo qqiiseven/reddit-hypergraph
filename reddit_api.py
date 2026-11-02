@@ -1,12 +1,12 @@
 """Loopback-only JSON API; model dependencies run in project2's own venv."""
 import hashlib
 import json
-import re
 import subprocess
 import threading
 from pathlib import Path
 from urllib.parse import urlsplit
 
+from training.reddit.checkpoints import load_source
 from training.reddit.custom_schema import LIMITS, InputError, example, validate_input
 
 ROOT = Path(__file__).resolve().parent
@@ -14,18 +14,12 @@ INFERENCE_SLOT = threading.BoundedSemaphore(1)
 
 
 def metadata():
-    active = json.loads((ROOT / 'reports/reddit/active-run.json').read_text())
-    run_id = active['run_id']
-    if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]{0,79}', run_id):
-        raise ValueError('无效的模型批次名')
-    manifest = json.loads((ROOT / 'reports/reddit/runs' / run_id / 'manifest.json').read_text())
-    viewer = json.loads((ROOT / 'data/reddit/processed/viewer-data.json').read_text())
+    source = load_source(ROOT)
     python = ROOT / '.venv' / ('Scripts/python.exe' if __import__('os').name == 'nt' else 'bin/python')
     if not python.is_file():
         raise ValueError('未找到 project2 的 Python 环境，请按 training/reddit/README.md 配置 .venv')
-    if not all((ROOT / 'artifacts/reddit/runs' / run_id / f'{m}.pt').is_file() for m in ['hgnnp', 'mlp']):
-        raise ValueError('未找到 HGNN+ / MLP 权重，请先训练并激活一个批次')
-    return {'run_id': run_id, 'training_commit': manifest['commit'], 'communities': viewer['communities'],
+    return {'run_id': source['run_id'], 'training_commit': source['training_commit'],
+            'communities': source['communities'], 'model_source': source['source'],
             'limits': LIMITS, 'example': example(), 'methods': ['hgnnp', 'mlp']}, python
 
 

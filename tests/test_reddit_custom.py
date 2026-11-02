@@ -97,7 +97,7 @@ class APITests(unittest.TestCase):
         reddit_api.INFERENCE_SLOT.release()
 
 
-@unittest.skipUnless((ROOT / 'artifacts/reddit/runs/project2-20261102-001/hgnnp.pt').exists(), 'Local weights are deliberately not committed')
+@unittest.skipUnless((ROOT / 'models/reddit/project2-20261102-001/hgnnp.pt').exists(), 'Published model bundle is not available')
 class RealCheckpointTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
