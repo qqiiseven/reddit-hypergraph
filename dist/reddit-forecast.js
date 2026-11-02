@@ -3,7 +3,7 @@
   'use strict';
   const M=window.RedditForecastModel,methods=M.methods;
   const state={user:0,cutoff:7,method:'hgnnp',filter:'all',revealed:false};
-  let host,network,predictions,loading,pending,notice='';
+  let host,network,predictions,loading,pending,graphCandidate=null,notice='';
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const fmt=n=>n.toLocaleString('zh-CN'),pct=n=>(n*100).toFixed(2)+'%';
   const q=s=>host.querySelector(s);
@@ -40,8 +40,7 @@
       '<div class="rf-history-heading"><strong>已观察到 '+r.seen.length+' 个社区</strong><span>'+esc(network.userIds[u])+'</span></div><div class="rf-tags">'+tags(r.seen)+'</div><p class="rm-note">这些历史社区已排除在推荐候选之外。“新增”指此前窗口内没有观察到，并非真实首次加入。</p></section>'+
       '<div class="rf-columns"><section class="panel rf-card"><div class="rf-card-heading"><div><span class="r-kicker">01 / 看预测</span><h2>模型给出的下一站</h2></div><select id="rf-model" aria-label="预测模型">'+Object.entries(methods).map(([v,label])=>'<option value="'+v+'" '+(v===state.method?'selected':'')+'>'+label+'</option>').join('')+'</select></div>'+
       '<p class="rf-method-note">'+(state.method==='hgnnp'?'结合个人历史和社区群体聚合。':state.method==='mlp'?'使用个人历史特征，不做群体聚合。':state.method==='overlap'?'根据历史社区的用户重叠程度排序。':'根据近期社区参与规模排序。')+'</p>'+
-      '<ol class="rf-rankings">'+r.rankings.map(([c,score],i)=>'<li><span class="rf-number">'+String(i+1).padStart(2,'0')+'</span><div><strong>'+esc(network.communities[c])+'</strong><small>排序分数 '+score.toFixed(3)+'</small></div><span class="rf-outcome '+(state.revealed&&r.truth.includes(c)?'hit':'')+'">'+(state.revealed?(r.truth.includes(c)?'✓ 真实新增':'未观察到'):'待核验')+'</span></li>').join('')+'</ol>'+
-      (!r.rankings.length?'<p class="rf-empty">'+(!r.known?'截止当前窗口没有已知历史，本模型不输出冷启动推荐。':'没有可推荐的未观察社区。')+'</p>':'')+
+      '<div id="rf-prediction-graph"></div>'+
       '<p class="rm-note">读取已训练结果；分数用于当前模型内排序，不是概率，也不能跨模型比较。</p></section>'+
       '<section class="panel rf-card"><div class="rf-card-heading"><div><span class="r-kicker">02 / 对照真实记录</span><h2>打开真实的下一期</h2></div><span class="rf-split">'+esc(to.label)+'</span></div><p class="rf-method-note">'+esc(to.start)+' — '+esc(to.end)+'</p>'+
       '<div id="rf-truth" class="rf-truth">'+(state.revealed?'<strong>'+(r.truth.length?'真实新增 '+r.truth.length+' 个社区，Top 5 命中 '+r.hits+' 个':'下一期没有观察到新增社区')+'</strong><div class="rf-tags">'+tags(r.truth)+'</div><p class="rm-note">下一期全部出现记录：</p><div class="rf-tags">'+tags(r.actual)+'</div><p class="rm-note">'+(r.eligible?'此用户–窗口纳入条件排序指标。':'此用户–窗口不纳入条件排序指标：'+(!r.known?'缺少已知历史。':'没有真实新增。'))+'</p>':'<span class="rf-question" aria-hidden="true">?</span><strong>先看推荐，再用真实记录核验。</strong><p>没有命中、没有新增的情况也会保留。</p>')+'</div>'+
@@ -50,9 +49,16 @@
       '<div class="rf-table-wrap"><table><thead><tr><th>方法</th><th>用户–窗口数</th><th>Recall@5</th><th>Hit@5</th><th>NDCG@5</th></tr></thead><tbody>'+Object.entries(methods).map(([method,label])=>{const m=predictions.metrics.summary[method];return '<tr class="'+(method===state.method?'selected':'')+'"><th>'+label+'</th><td>'+fmt(m.user_periods)+'</td><td>'+pct(m.recall5)+'</td><td>'+pct(m.hit5)+'</td><td>'+m.ndcg5.toFixed(3)+'</td></tr>';}).join('')+'</tbody></table></div>'+
       '<p class="rm-note">仅评估有已知历史且下一期确有新增记录的用户。测试期间模型权重冻结，历史快照随窗口前进；这是单个随机种子的已有实验，不是现场重新训练或因果传播模拟。</p><p class="rm-note">本页使用本机完整预测批次；“预测案例”保留原版导出及其评估。两批模型结果略有不同，请在各自批次内比较。</p>'+
       '<details class="rf-provenance"><summary>结果来源与可追溯性</summary><p>训练代码提交：<code>'+esc(predictions.provenance.training_commit||'未记录')+'</code></p><p>社区数据 SHA-256：<code>'+esc(predictions.provenance.network_source_sha256)+'</code></p><p>预测文件 SHA-256：<code>'+esc(predictions.provenance.predictions_source_sha256||'未记录')+'</code></p></details></section>';
+    window.RedditPredictionGraph.mount(q('#rf-prediction-graph'),{
+      users:network.userIds.map((id,i)=>({id,communities:network.memberships[t][i].map(c=>network.communities[c])})),
+      focalId:network.userIds[u],rankings:r.rankings.map(([c,score])=>({community:network.communities[c],score})),
+      selected:graphCandidate,onSelect:c=>{graphCandidate=c;},truth:state.revealed?r.truth.map(c=>network.communities[c]):null,
+      canReveal:true,periodLabel:from.label,targetLabel:to.label,
+      emptyMessage:!r.known?'截止当前窗口没有已知历史，本模型不输出冷启动推荐。':'没有可推荐的未观察社区。'
+    });
     bind();
   }
-  function chooseUser(u){state.user=u;state.revealed=false;notice='';render();}
+  function chooseUser(u){graphCandidate=null;state.user=u;state.revealed=false;notice='';render();}
   function bind(){
     const input=q('#rf-user');
     input.oninput=()=>{const text=input.value.trim();q('#rf-users').innerHTML=network.userIds.filter(id=>id.includes(text)).slice(0,12).map(id=>'<option value="'+esc(id)+'"></option>').join('');};
@@ -63,8 +69,8 @@
       if(b.dataset.forecast==='reveal'){state.revealed=!state.revealed;render();q('[data-forecast=reveal]').focus({preventScroll:true});}
       if(b.dataset.forecast==='random'){const ids=M.candidates(network,predictions,state.cutoff,state.method,state.filter);if(!ids.length){q('#rf-notice').textContent='当前筛选没有符合条件的用户。';return;}chooseUser(ids[Math.floor(Math.random()*ids.length)]);}
     };
-    q('#rf-cutoff').onchange=e=>{state.cutoff=+e.target.value;state.revealed=false;notice='';render();};
-    q('#rf-model').onchange=e=>{state.method=e.target.value;state.revealed=false;notice='';render();};
+    q('#rf-cutoff').onchange=e=>{state.cutoff=+e.target.value;graphCandidate=null;state.revealed=false;notice='';render();};
+    q('#rf-model').onchange=e=>{state.method=e.target.value;graphCandidate=null;state.revealed=false;notice='';render();};
     q('#rf-filter').onchange=e=>{state.filter=e.target.value;q('[data-forecast=random]').click();};
   }
   function openUser(userId,cutoff){pending={userId,cutoff};if(location.hash==='#reddit-predict'&&predictions){applyPending();render();}else location.hash='reddit-predict';}
