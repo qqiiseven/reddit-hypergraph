@@ -59,7 +59,11 @@ cp training/reddit/config.example.json training/reddit/config.local.json
 .venv/bin/python training/reddit/infer.py --run-id reddit-local-001 --model hgnnp --cutoff 7 --user-id u_...
 ```
 
-推理会从权重重新计算分数，不读取未来标签。输入必须与权重的数据和社区顺序匹配。这里是命令行推理，网页尚不提供在线模型 API。
+推理会从权重重新计算分数，不读取未来标签。该命令用于原训练数据中的用户，输入必须与权重的数据和社区顺序匹配。自建用户可使用下面的前端接口。
+
+`python3 launch.py` 现包含本机模型 API。打开 `index.html#reddit-custom`，编辑或导入 JSON，按页面格式说明填入用户历史后调用模型。`custom_schema.py` 校验结构，`custom_predict.py` 在独立子进程加载本批次 HGNN+ / MLP 权重，按固定的 44 个社区构建新用户特征与本次提交群体的超图。新用户不需要来自原训练集，也不会与原 8,000 人混合；添加新社区类别则需要重新训练。
+
+API 不保存用户输入，不修改旧数据或预测。每次返回训练批次、训练 commit、输入 SHA-256 和排序结果，前端可一并下载。请求上限 256 KiB、100 位用户、11 期历史，模型计算超时为 30 秒。输入编辑后旧结果会清除；计算期间输入发生变化时，前端丢弃过期响应。
 
 校验通过后，可将新批次用于 07 的完整“下一期预测”页面：
 
@@ -72,8 +76,8 @@ cp training/reddit/config.example.json training/reddit/config.local.json
 ## 验证
 
 ```bash
-.venv/bin/python -m unittest discover -s tests -p 'test_reddit_training.py' -v
+.venv/bin/python -m unittest discover -s tests -p 'test_reddit_*.py' -v
 npm test
 ```
 
-Python 检查未来数据隔离、超图均值聚合、时间划分、历史候选排除、冷启动和训练反向传播。运行级校验覆盖权重重放、真实新增标签、全部导出排名和整体指标；加 `--raw` 会核对全部 3,872,000 个原始成员关系及回复度数。
+Python 检查未来数据隔离、超图均值聚合、时间划分、历史候选排除、冷启动和训练反向传播，也检查自建输入校验、HTTP 错误处理及真实权重推理：改变同伴历史会影响 HGNN+，而目标用户的 MLP 不变。真实权重测试在缺少本地权重时跳过。运行级校验覆盖权重重放、真实新增标签、全部导出排名和整体指标；加 `--raw` 会核对全部 3,872,000 个原始成员关系及回复度数。

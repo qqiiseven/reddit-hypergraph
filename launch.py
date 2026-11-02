@@ -5,15 +5,19 @@ from functools import partial
 import argparse
 import threading
 import webbrowser
+from reddit_api import RedditAPIHandler
 
 ROOT=Path(__file__).resolve().parent
+
+class Handler(RedditAPIHandler, SimpleHTTPRequestHandler):
+    pass
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--port',type=int,default=4173,help='Default 4173; 0 selects an available local port')
     parser.add_argument('--no-browser',action='store_true')
     args=parser.parse_args()
-    handler=partial(SimpleHTTPRequestHandler,directory=str(ROOT/'dist'))
+    handler=partial(Handler,directory=str(ROOT/'dist'))
     # Keep the origin stable so browser caches and experiment data survive restarts.
     if not 0 <= args.port <= 65535:
         parser.error('port must be between 0 and 65535')

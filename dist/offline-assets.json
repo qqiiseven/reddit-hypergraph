@@ -1,6 +1,6 @@
 {
-  "version": "c00fe7e1c98373",
-  "count": 63,
+  "version": "29e7e453e73990",
+  "count": 66,
   "files": [
     "app.js",
     "fonts/LICENSE.txt",
@@ -53,6 +53,9 @@
     "rag-assets/efficiency_vs_performance.png",
     "rag-benchmark.json",
     "rag-research-data.json",
+    "reddit-custom-model.js",
+    "reddit-custom.css",
+    "reddit-custom.js",
     "reddit-data.js",
     "reddit-forecast-model.js",
     "reddit-forecast.css",
