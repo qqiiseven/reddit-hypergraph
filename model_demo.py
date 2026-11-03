@@ -35,14 +35,21 @@ def run(args, cwd=None, timeout=90):
     return result.stdout.strip()
 
 
+def normalize_signature(value):
+    # macOS can replace the venv executable name with Python.app after exec.
+    # Keep the process start time and exact script arguments, not that changing prefix.
+    match = re.match(r'^(.+? \d{4})\s+.*?(' + re.escape(str(ROOT / 'serve_model.py')) + r'(?:\s.*)?)$', value.strip())
+    return f'{match[1]} {match[2]}' if match else ''
+
+
 def signature(pid):
     result = subprocess.run(['ps', '-p', str(pid), '-o', 'lstart=', '-o', 'command='], capture_output=True, text=True)
-    return result.stdout.strip() if result.returncode == 0 else ''
+    return normalize_signature(result.stdout) if result.returncode == 0 else ''
 
 
 def owned_process(state):
     pid = state.get('pid')
-    saved = state.get('signature', '')
+    saved = normalize_signature(state.get('signature', ''))
     return (isinstance(pid, int) and pid > 1 and bool(saved) and
             str(ROOT / 'serve_model.py') in saved and signature(pid) == saved)
 

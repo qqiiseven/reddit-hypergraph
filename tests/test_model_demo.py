@@ -9,6 +9,13 @@ import model_demo as demo
 
 
 class ProcessTests(unittest.TestCase):
+    def test_macos_python_executable_change_preserves_process_identity(self):
+        args = str(demo.ROOT / 'serve_model.py') + ' --tunnel --endpoint-file /tmp/endpoint.json'
+        before = 'Tue Nov  3 19:54:28 2026 /project/.venv/bin/python ' + args
+        after = 'Tue Nov  3 19:54:28 2026 /Frameworks/Python.app/Contents/MacOS/Python ' + args
+        self.assertEqual(demo.normalize_signature(before), demo.normalize_signature(after))
+        self.assertNotEqual(demo.normalize_signature(before), demo.normalize_signature(after.replace('19:54:28', '19:54:29')))
+
     def test_reused_pid_is_never_stopped(self):
         state = {'pid': 321, 'signature': 'old start ' + str(demo.ROOT / 'serve_model.py')}
         with patch.object(demo, 'signature', return_value='new unrelated process'), patch.object(demo.os, 'kill') as kill:
