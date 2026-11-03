@@ -1,6 +1,6 @@
 {
-  "version": "4e919c1b270b0b",
-  "count": 68,
+  "version": "4f25c22d21cc15",
+  "count": 69,
   "files": [
     "app.js",
     "fonts/LICENSE.txt",
@@ -24,6 +24,7 @@
     "lab.html",
     "lab.js",
     "manual.html",
+    "model-service.json",
     "model.js",
     "offline.js",
     "paper-assets/figure3-data.js",

@@ -14,7 +14,7 @@
 
 若 Settings → Environments → github-pages 限制了可部署分支，需要允许 `task/github-pages-demo`。保留已有的环境审批规则，按 GitHub 的提示完成部署审批。
 
-概念交互、派对侦探、森林露营、传播模拟、RAG 预设证据和 Reddit 完整地图、自由预测探索及精选案例可直接在浏览器使用。地图入口为 `index.html#reddit`，完整预测入口为 `index.html#reddit-predict`。2026-11-03 经用户明确授权，部署分支公开配套的 `dist/reddit-network.json` 和 `dist/reddit-predictions.json`，与本机使用同一份导出。完整预测是已训练结果的回放，不需要在线加载模型权重；自建数据的实时预测仍需本机 Python/PyTorch 后端，GitHub Pages 不提供模型 API。
+概念交互、派对侦探、森林露营、传播模拟、RAG 预设证据和 Reddit 完整地图、自由预测探索及精选案例可直接在浏览器使用。地图入口为 `index.html#reddit`，完整预测入口为 `index.html#reddit-predict`。2026-11-03 经用户明确授权，部署分支公开配套的 `dist/reddit-network.json` 和 `dist/reddit-predictions.json`，与本机使用同一份导出。完整预测是已训练结果的回放，不需要在线加载模型权重；自建数据的实时预测通过独立的本机 Python/PyTorch 后端计算；GitHub Pages 读取公开的 `dist/model-service.json` 连接该后端。
 
 部署只上传全新 Git 检出中的 `dist/`，包含上述两个已批准的公开数据文件。部署前运行 `node scripts/verify-reddit-publication.cjs`，核对匿名用户标识、用户与社区顺序、来源绑定、所有窗口的真实新增记录和推荐合法性，并记录文件 SHA-256。原始数据、其他被忽略的数据、日志、配置和模型环境不随网站发布。未来更新网站时，将需要发布的代码同步到部署任务分支，检查差异后推送；不需要推送主分支。
 
@@ -43,6 +43,22 @@ python3 launch.py
 当前公开权重位于 `models/reddit/project2-20261102-001/`，两份合计约 165 KiB，带 SHA-256 校验和有序社区字典。有已激活的本地训练批次时，优先使用该批次；否则使用 `models/reddit/default.json` 指定的公开权重。
 
 部署分支另行提供完整圈层地图和自由探索使用的 8,000 人历史与配套预测导出。这两个 JSON 不属于模型包，静态网页直接读取它们，无需安装推理依赖。
+
+## 给在线网页连接本机模型
+
+已安装 PyTorch 的本机可用 Cloudflare Quick Tunnel 提供临时 HTTPS 接口。macOS 首次安装 `brew install cloudflared`，然后在项目根目录运行：
+
+```bash
+.venv/bin/python serve_model.py --tunnel
+```
+
+此窗口需保持运行，电脑需联网且不休眠；按 Ctrl+C 同时关闭模型接口与隧道。仅通过 `python3 launch.py` 启动的普通本地浏览继续使用原来的同源接口。
+
+隧道每次启动会生成新地址。脚本将它写入公开的 `dist/model-service.json`，需执行 `npm run offline:build`，将该文件及离线缓存更新提交到部署分支并推送；Pages 部署成功后，访问 `index.html#reddit-custom`，点击“重新检查”，看到“演示模型已连接”即可调用。地址文件只包含公开服务 URL，不包含凭据。不要将隧道配置、证书或令牌提交到仓库。
+
+`serve_model.py` 默认只监听 `127.0.0.1:4189`，隧道只转发到这个独立接口服务。它不提供网页、目录或权重下载；只开放模型信息与预测，浏览器跨域来源限定为 `https://qqiiseven.github.io`。CORS 不是身份认证：这个临时公开演示接口可被知道 URL 的非浏览器客户端调用。仍保留 256 KiB、100 人、11 期输入上限、单次并发推理及 30 秒推理超时；输入和输出不由本项目自动落盘。完成演示后停止服务。
+
+Quick Tunnel 用于临时演示，重启会换地址，也没有持续可用性保证：[Cloudflare 官方说明](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/)。
 
 ## 源码与验证
 
