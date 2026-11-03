@@ -14,9 +14,9 @@
 
 若 Settings → Environments → github-pages 限制了可部署分支，需要允许 `task/github-pages-demo`。保留已有的环境审批规则，按 GitHub 的提示完成部署审批。
 
-概念交互、派对侦探、森林露营、传播模拟、RAG 预设证据和 Reddit 精选案例可直接在浏览器使用。Reddit 演示入口应指向 `index.html#reddit-predict/cases`。完整圈层地图和自由预测探索依赖未提交的数据文件，线上不自带这些数据；自建数据的实时预测仍需本机 Python/PyTorch 后端，GitHub Pages 不提供模型 API。
+概念交互、派对侦探、森林露营、传播模拟、RAG 预设证据和 Reddit 完整地图、自由预测探索及精选案例可直接在浏览器使用。地图入口为 `index.html#reddit`，完整预测入口为 `index.html#reddit-predict`。2026-11-03 经用户明确授权，部署分支公开配套的 `dist/reddit-network.json` 和 `dist/reddit-predictions.json`，与本机使用同一份导出。完整预测是已训练结果的回放，不需要在线加载模型权重；自建数据的实时预测仍需本机 Python/PyTorch 后端，GitHub Pages 不提供模型 API。
 
-部署只上传全新 Git 检出中的 `dist/`，不会上传本机被忽略的数据、日志、配置或模型环境。未来更新网站时，将需要发布的代码同步到部署任务分支，检查差异后推送；不需要推送主分支。
+部署只上传全新 Git 检出中的 `dist/`，包含上述两个已批准的公开数据文件。部署前运行 `node scripts/verify-reddit-publication.cjs`，核对匿名用户标识、用户与社区顺序、来源绑定、所有窗口的真实新增记录和推荐合法性，并记录文件 SHA-256。原始数据、其他被忽略的数据、日志、配置和模型环境不随网站发布。未来更新网站时，将需要发布的代码同步到部署任务分支，检查差异后推送；不需要推送主分支。
 
 浏览静态页面需要 Python 3，无第三方运行依赖；“自建数据预测”另外使用 project2 的 `.venv`、PyTorch；当前训练好的权重已包含在仓库中：
 
@@ -42,7 +42,7 @@ python3 launch.py
 
 当前公开权重位于 `models/reddit/project2-20261102-001/`，两份合计约 165 KiB，带 SHA-256 校验和有序社区字典。有已激活的本地训练批次时，优先使用该批次；否则使用 `models/reddit/default.json` 指定的公开权重。
 
-完整圈层地图和自由探索中的 8,000 人历史、完整预测文件仍为本地数据，不包含在模型包内；精选案例及自建数据预测可以使用仓库提供的资源运行。
+部署分支另行提供完整圈层地图和自由探索使用的 8,000 人历史与配套预测导出。这两个 JSON 不属于模型包，静态网页直接读取它们，无需安装推理依赖。
 
 ## 源码与验证
 
@@ -60,15 +60,15 @@ python3 launch.py
 
 安装 Node.js 后运行 `npm test`；当前 50 项测试通过。训练环境中运行 `.venv/bin/python -m unittest discover -s tests -p 'test_reddit_*.py' -v`，当前本机另有 22 项 Python 检查通过。修改网页后运行 `npm run offline:build` 更新离线缓存，再运行测试。运行网页无需 npm install。
 
-## 圈层地图与下一期预测的本地数据
+## 圈层地图与下一期预测的数据
 
-完整社区数据不提交 Git。已有旧项目 `dist/data.json` 时运行：
+部署分支已包含获准公开的配套导出，无需重新生成。原始 `data.json` 和训练资料继续保留在本地。需要从旧项目重新导出时运行：
 
 ```bash
 python3 scripts/prepare-reddit-map.py --source /path/to/old-project/dist/data.json
 ```
 
-脚本只导出匿名用户标识、社区、窗口和归属记录到被忽略的 `dist/reddit-network.json`，并记录源文件 SHA-256。也可在地图缺少数据时直接通过页面载入旧 `data.json` 或该导出文件。网页不会下载原始归档或重新训练模型。
+脚本只导出匿名用户标识、社区、窗口和归属记录到 `dist/reddit-network.json`，并记录源文件 SHA-256。也可在地图缺少数据时直接通过页面载入旧 `data.json` 或该导出文件。网页不会下载原始归档或重新训练模型。
 
 有旧项目完整预测文件时，再运行：
 
@@ -76,9 +76,9 @@ python3 scripts/prepare-reddit-map.py --source /path/to/old-project/dist/data.js
 python3 scripts/prepare-reddit-predictions.py --network-source /path/to/old-project/dist/data.json --predictions /path/to/old-project/dist/predictions.json
 ```
 
-该脚本将已有预测与原始用户、社区顺序及文件哈希绑定，生成被 Git 忽略的 `dist/reddit-predictions.json`。页面校验对应的数据哈希、历史排除和真实下一期记录；缺少预测文件时可手动载入该导出。需要配套的 `reddit-network.json`。完整预测包含 P07→P08 验证期及 P08→P09、P09→P10、P10→P11 测试期，四种方法为 HGNN+、MLP、社区重叠及热门基线。
+该脚本将已有预测与原始用户、社区顺序及文件哈希绑定，生成 `dist/reddit-predictions.json`。页面校验对应的数据哈希、历史排除和真实下一期记录；缺少预测文件时可手动载入该导出。需要配套的 `reddit-network.json`。完整预测包含 P07→P08 验证期及 P08→P09、P09→P10、P10→P11 测试期，四种方法为 HGNN+、MLP、社区重叠及热门基线。
 
-当前本机完整导出与保留的三个案例属于不同批次，因此各自使用配套指标，不覆盖旧结果。筛选命中或未命中属于事后探索，不改变完整测试集评估。这一页回放训练好的预测；另一个“自建数据预测”标签实时调用保存的权重。
+当前公开的完整导出与保留的三个案例属于不同批次，因此各自使用配套指标，不覆盖旧结果。筛选命中或未命中属于事后探索，不改变完整测试集评估。这一页回放训练好的预测；另一个“自建数据预测”标签实时调用保存的权重。
 
 ## 自建数据预测
 
@@ -90,7 +90,7 @@ python3 scripts/prepare-reddit-predictions.py --network-source /path/to/old-proj
 
 接口只监听本机 `127.0.0.1`：`GET /api/reddit/model` 返回当前权重批次、社区列表和模板；`POST /api/reddit/predict` 接收上述 JSON。输入和输出不自动保存、不写入训练数据、不触发训练；可通过页面下载保存。模型不可用时显示实际错误，原来的圈层地图、已保存预测和案例仍可使用。
 
-地图的社区人数和 Jaccard 使用完整选定样本；最多 48 个绘图节点是显示取样，不影响统计。数据文件不属于安装离线缓存的必需资源；通过本地服务成功载入后，才缓存相应数据或预测文件以供断开服务时使用。仅克隆代码也可打开其余页面和已有预测案例。
+地图的社区人数和 Jaccard 使用完整选定样本；最多 48 个绘图节点是显示取样，不影响统计。数据文件不属于安装离线缓存的必需资源；通过网站或本地服务成功载入后，才缓存相应数据或预测文件以供离线使用。两个文件必须配套更新；替换公开导出前需核对发布范围，运行发布校验并审查 Git 差异。
 
 传播与划分算法在本地执行；RAG 页面展示预设证据和论文数据，不调用模型 API、不重跑论文训练。原始数据、环境配置、密钥、日志、生成报告和临时预览不纳入版本管理。
 

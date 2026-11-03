@@ -31,8 +31,7 @@ jobs:
           node --version
           npm test
           test -f dist/index.html
-          test ! -e dist/reddit-network.json
-          test ! -e dist/reddit-predictions.json
+          node scripts/verify-reddit-publication.cjs
 
       - uses: actions/configure-pages@v5
 
