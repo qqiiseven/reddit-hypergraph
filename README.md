@@ -6,6 +6,18 @@
 
 ## 运行
 
+### GitHub Pages 在线演示
+
+`.github/workflows/pages.yml` 发布 Git 中的 `dist/` 静态资源。仓库需先在 Settings → Pages 将 Source 设为 GitHub Actions。
+
+首次部署通过推送 `task/github-pages-demo` 分支触发，不需要修改默认分支。工作流先运行 `npm test`，再部署检出的准确提交，并在运行摘要中记录 commit SHA 和网站地址。`workflow_dispatch` 只有在工作流进入默认分支后才会显示手动入口；本配置同时保留该入口供以后使用。
+
+若 Settings → Environments → github-pages 限制了可部署分支，需要允许 `task/github-pages-demo`。保留已有的环境审批规则，按 GitHub 的提示完成部署审批。
+
+概念交互、派对侦探、森林露营、传播模拟、RAG 预设证据和 Reddit 精选案例可直接在浏览器使用。Reddit 演示入口应指向 `index.html#reddit-predict/cases`。完整圈层地图和自由预测探索依赖未提交的数据文件，线上不自带这些数据；自建数据的实时预测仍需本机 Python/PyTorch 后端，GitHub Pages 不提供模型 API。
+
+部署只上传全新 Git 检出中的 `dist/`，不会上传本机被忽略的数据、日志、配置或模型环境。未来更新网站时，将需要发布的代码同步到部署任务分支，检查差异后推送；不需要推送主分支。
+
 浏览静态页面需要 Python 3，无第三方运行依赖；“自建数据预测”另外使用 project2 的 `.venv`、PyTorch；当前训练好的权重已包含在仓库中：
 
 ```bash
