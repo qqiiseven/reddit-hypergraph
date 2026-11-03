@@ -46,15 +46,20 @@ python3 launch.py
 
 ## 给在线网页连接本机模型
 
-已安装 PyTorch 的本机可用 Cloudflare Quick Tunnel 提供临时 HTTPS 接口。macOS 首次安装 `brew install cloudflared`，然后在项目根目录运行：
+重启电脑后，在项目目录双击 **`启动在线模型.command`** 即可。它会检查本机依赖和 GitHub 登录、启动模型与隧道、取得新地址、自动提交连接地址到 `task/github-pages-demo`，并等待该提交的 Pages 部署和公网接口验证成功后打开网页。首次完成通常需要等待约 1–3 分钟，实际取决于网络和 GitHub 排队。
+
+看到“启动成功”后可以关闭终端窗口，模型继续在后台运行；电脑需联网、不休眠。结束演示时双击 **`停止在线模型.command`**，会同时停止模型和隧道。没有设置开机自动运行。
+
+重复点击启动会复用已运行的服务；上次 GitHub 发布中断时，重新启动会继续检查。发布器在独立临时 checkout 中只提交 `dist/model-service.json`，不上传其他未提交文件，不强推、不切换当前分支。当前工作区干净且版本匹配时会安全快进；有未完成工作时保留原状。隧道地址不加入离线缓存，所以每次重新检查会获取最新连接配置。
+
+本机已安装所需依赖。换电脑时需先配置 `.venv`/PyTorch、`cloudflared`、Git 和已登录的 GitHub CLI（`gh auth login`）；Git 需有该仓库的任务分支推送权限。命令行也可使用：
 
 ```bash
-.venv/bin/python serve_model.py --tunnel
+.venv/bin/python model_demo.py start
+.venv/bin/python model_demo.py stop
 ```
 
-此窗口需保持运行，电脑需联网且不休眠；按 Ctrl+C 同时关闭模型接口与隧道。仅通过 `python3 launch.py` 启动的普通本地浏览继续使用原来的同源接口。
-
-隧道每次启动会生成新地址。脚本将它写入公开的 `dist/model-service.json`，需执行 `npm run offline:build`，将该文件及离线缓存更新提交到部署分支并推送；Pages 部署成功后，访问 `index.html#reddit-custom`，点击“重新检查”，看到“演示模型已连接”即可调用。地址文件只包含公开服务 URL，不包含凭据。不要将隧道配置、证书或令牌提交到仓库。
+运行状态、PID、日志、准确部署 commit SHA 和 workflow URL 记录在被忽略的 `logs/model-demo-state.json`，过程日志为 `logs/model-demo-时间.log`。日志及本地配置不提交 Git。公开的 `dist/model-service.json` 只包含服务 URL，不含凭据。普通 `python3 launch.py` 继续提供本地同源网页与接口。
 
 `serve_model.py` 默认只监听 `127.0.0.1:4189`，隧道只转发到这个独立接口服务。它不提供网页、目录或权重下载；只开放模型信息与预测，浏览器跨域来源限定为 `https://qqiiseven.github.io`。CORS 不是身份认证：这个临时公开演示接口可被知道 URL 的非浏览器客户端调用。仍保留 256 KiB、100 人、11 期输入上限、单次并发推理及 30 秒推理超时；输入和输出不由本项目自动落盘。完成演示后停止服务。
 

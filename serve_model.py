@@ -60,6 +60,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--port', type=int, default=4189)
     parser.add_argument('--tunnel', action='store_true', help='Start cloudflared and write its new public endpoint into dist/model-service.json')
+    parser.add_argument('--endpoint-file', type=Path, default=ROOT / 'dist/model-service.json', help='Where to write the tunnel endpoint; managed launchers use a local runtime file')
     args = parser.parse_args()
     if not 0 <= args.port <= 65535:
         parser.error('port must be between 0 and 65535')
@@ -88,11 +89,13 @@ def main():
                     match = re.search(r'https://[a-z0-9-]+\.trycloudflare\.com\b', line)
                     if match and not written:
                         endpoint = match.group(0)
-                        config = ROOT / 'dist/model-service.json'
-                        config.write_text(json.dumps({'endpoint': endpoint}, indent=2) + '\n')
+                        config = args.endpoint_file
+                        temporary = config.with_suffix('.tmp')
+                        temporary.write_text(json.dumps({'endpoint': endpoint}, indent=2) + '\n')
+                        temporary.replace(config)
                         written = True
                         print(f'PUBLIC_MODEL_ENDPOINT={endpoint}', flush=True)
-                        print('New endpoint saved. Run npm run offline:build, then commit and push the deployment branch to update Pages.', flush=True)
+                        print(f'Endpoint saved to {config}', flush=True)
             threading.Thread(target=read_tunnel, daemon=True).start()
         while not stop.wait(1):
             if tunnel is not None and tunnel.poll() is not None:
