@@ -40,11 +40,19 @@
     for(let k=0;k<100;k++)for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){const a=nodes[i],b=nodes[j],dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||1;if(d<38){const move=(38-d)/2+.01,ux=dx/d,uy=dy/d;a.x=Math.max(48,Math.min(width-48,a.x-ux*move));a.y=Math.max(65,Math.min(height-48,a.y-uy*move));b.x=Math.max(48,Math.min(width-48,b.x+ux*move));b.y=Math.max(65,Math.min(height-48,b.y+uy*move));}}
     return {nodes,edges,width,height};
   }
+  // A derived view: keep the overview coordinates and all memberships intact.
+  function focusLayout(data,community){
+    const circle={x:300,y:350,r:230},members=data.nodes.filter(n=>n.cs.includes(community)),others=data.nodes.filter(n=>!n.cs.includes(community));
+    const positions=new Map();
+    members.forEach((n,i)=>{const angle=i*2.3999632297,r=190*Math.sqrt((i+.5)/Math.max(1,members.length));positions.set(n.id,{x:circle.x+r*Math.cos(angle),y:circle.y+r*Math.sin(angle)});});
+    others.forEach((n,i)=>positions.set(n.id,{x:620+(i%6)*54,y:155+Math.floor(i/6)*54}));
+    return {circle,nodes:data.nodes.map(n=>({...n,...positions.get(n.id),member:n.cs.includes(community)})),memberCount:members.length,otherCount:others.length};
+  }
   function move(data,id,x,y){
     const n=data.nodes.find(n=>n.id===id);if(!n||!Number.isFinite(x)||!Number.isFinite(y))return false;
     x=Math.max(48,Math.min(data.width-48,x));y=Math.max(65,Math.min(data.height-48,y));
     if(data.nodes.some(p=>p!==n&&Math.hypot(p.x-x,p.y-y)<36))return false;n.x=x;n.y=y;return true;
   }
-  const api={palette,validate,summary,sample,layout,move};
+  const api={palette,validate,summary,sample,layout,focusLayout,move};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.RedditMapModel=api;
 })(typeof window!=='undefined'?window:globalThis);

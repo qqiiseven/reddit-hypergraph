@@ -69,9 +69,25 @@
     q('#rm-legend').innerHTML=geometry.edges.map(e=>button('focus','<i style="background:'+e.color+'"></i>'+esc(data.communities[e.c])+' <small>'+e.members.length+' 人</small>','data-value="'+e.c+'" aria-pressed="'+(state.focus===e.c)+'"')).join('');
     drawArt();bindDrag(svg);showDetail();
   }
+  function drawFocused(layer){
+    const view=M.focusLayout(geometry,state.focus),edge=geometry.edges.find(e=>e.c===state.focus),c=view.circle;
+    layer.append(svgEl('circle',{cx:c.x,cy:c.y,r:c.r,fill:edge.color,'fill-opacity':.09,stroke:edge.color,'stroke-width':2.5}));
+    layer.append(svgEl('text',{x:300,y:65,'text-anchor':'middle','font-size':19,fill:edge.color},data.communities[state.focus]));
+    layer.append(svgEl('text',{x:300,y:96,'text-anchor':'middle','font-size':14,fill:'#36516f'},'圈内：本社区成员 · '+view.memberCount+' 人'));
+    layer.append(svgEl('text',{x:755,y:65,'text-anchor':'middle','font-size':19,fill:'#36516f'},'非本社区成员'));
+    layer.append(svgEl('text',{x:755,y:96,'text-anchor':'middle','font-size':14,fill:'#61718b'},'圈外：当前展示的其他用户 · '+view.otherCount+' 人'));
+    layer.append(svgEl('text',{x:490,y:625,'text-anchor':'middle','font-size':13,fill:'#61718b'},'按真实归属分区；仅统计当前展示用户。再次点击所选社区，返回原布局。'));
+    for(const n of view.nodes){
+      const selected=state.user===n.id,g=svgEl('g',{'data-map-node':n.id,transform:'translate('+n.x+' '+n.y+')',tabindex:0,role:'button','aria-label':n.number+' · '+n.label+'；'+(n.member?'本社区成员':'非本社区成员'),class:'rm-user'});
+      g.append(svgEl('title',{},n.label+' · '+n.cs.map(c=>data.communities[c]).join('、')));
+      g.append(svgEl('circle',{r:15,fill:selected?'#e4f5f7':'#fff',stroke:selected?'#1597a3':n.member?edge.color:'#7e97b4','stroke-width':selected?3:1.6}));
+      g.append(svgEl('text',{y:4,'text-anchor':'middle','font-size':12,fill:'#36516f','pointer-events':'none'},n.number));layer.append(g);
+    }
+  }
   function drawArt(){
     const svg=q('#reddit-map-svg');if(!svg)return;const layer=svg.querySelector('[data-map-viewport]');layer.replaceChildren();
     layer.setAttribute('transform','translate(490 330) scale('+state.zoom+') translate(-490 -330)');
+    if(state.focus!==null){drawFocused(layer);return;}
     const defs=svgEl('defs');layer.append(defs);
     for(const edge of geometry.edges){
       const center=centroid(edge);if(!center)continue;
@@ -106,7 +122,7 @@
   }
   function showDetail(){
     const el=q('#rm-detail');if(!el)return;
-    if(state.user!==null){const n=geometry.nodes.find(n=>n.id===state.user);if(n){el.textContent=n.number+' · '+n.label+' — 本图归属：'+n.cs.map(c=>data.communities[c]).join('、');el.insertAdjacentHTML('beforeend',button('predict','查看下一期预测 →','class="rm-predict-link"'));return;}}
+    if(state.user!==null){const n=geometry.nodes.find(n=>n.id===state.user);if(n){el.textContent=n.number+' · '+n.label+(state.focus===null?'':n.cs.includes(state.focus)?' · 本社区成员':' · 非本社区成员')+' — 本图归属：'+n.cs.map(c=>data.communities[c]).join('、');el.insertAdjacentHTML('beforeend',button('predict','查看下一期预测 →','class="rm-predict-link"'));return;}}
     if(state.focus!==null){const edge=geometry.edges.find(e=>e.c===state.focus);el.textContent=data.communities[edge.c]+'：当前画面 '+edge.members.length+' 人，本期样本内 '+fmt(stats().sizes[edge.c])+' 人。';return;}
     el.textContent='点击节点或社区标签查看真实归属；拖动节点整理画面。';
   }
@@ -117,21 +133,21 @@
   function bindDrag(svg){
     let drag=null,suppress=false;
     function point(e){const matrix=svg.querySelector('[data-map-viewport]').getScreenCTM();if(!matrix)return null;const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(matrix.inverse());}
-    svg.addEventListener('pointerdown',e=>{const target=e.target.closest('[data-map-node]');if(!target||e.button!==0||e.isPrimary===false)return;const p=point(e);if(!p)return;const n=geometry.nodes.find(n=>n.id===target.dataset.mapNode);suppress=false;drag={n,id:e.pointerId,dx:n.x-p.x,dy:n.y-p.y,x:e.clientX,y:e.clientY,moved:false};svg.setPointerCapture(e.pointerId);svg.classList.add('is-dragging');e.preventDefault();});
+    svg.addEventListener('pointerdown',e=>{if(state.focus!==null)return;const target=e.target.closest('[data-map-node]');if(!target||e.button!==0||e.isPrimary===false)return;const p=point(e);if(!p)return;const n=geometry.nodes.find(n=>n.id===target.dataset.mapNode);suppress=false;drag={n,id:e.pointerId,dx:n.x-p.x,dy:n.y-p.y,x:e.clientX,y:e.clientY,moved:false};svg.setPointerCapture(e.pointerId);svg.classList.add('is-dragging');e.preventDefault();});
     svg.addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;if(!drag.moved&&Math.hypot(e.clientX-drag.x,e.clientY-drag.y)<4)return;drag.moved=true;const p=point(e);if(p&&M.move(geometry,drag.n.id,p.x+drag.dx,p.y+drag.dy))drawArt();e.preventDefault();});
     function finish(e){if(!drag||drag.id!==e.pointerId)return;const done=drag;drag=null;suppress=true;svg.classList.remove('is-dragging');if(svg.hasPointerCapture(e.pointerId))svg.releasePointerCapture(e.pointerId);state.user=done.n.id;state.focus=null;drawArt();showDetail();svg.querySelector('[data-map-node="'+done.n.id+'"]')?.focus({preventScroll:true});}
     svg.addEventListener('pointerup',finish);svg.addEventListener('pointercancel',finish);svg.addEventListener('lostpointercapture',finish);
     svg.addEventListener('click',e=>{if(suppress&&e.detail!==0){suppress=false;e.preventDefault();e.stopPropagation();}},true);
     svg.addEventListener('keydown',e=>{const target=e.target.closest('[data-map-node]');if(!target)return;const n=geometry.nodes.find(n=>n.id===target.dataset.mapNode);
-      if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){e.preventDefault();const step=e.shiftKey?20:8;M.move(geometry,n.id,n.x+(e.key==='ArrowRight'?step:e.key==='ArrowLeft'?-step:0),n.y+(e.key==='ArrowDown'?step:e.key==='ArrowUp'?-step:0));drawArt();svg.querySelector('[data-map-node="'+n.id+'"]').focus({preventScroll:true});}
-      else if(e.key==='Enter'||e.key===' '){e.preventDefault();state.user=n.id;state.focus=null;drawArt();showDetail();svg.querySelector('[data-map-node="'+n.id+'"]').focus({preventScroll:true});}
+      if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){e.preventDefault();if(state.focus!==null)return;const step=e.shiftKey?20:8;M.move(geometry,n.id,n.x+(e.key==='ArrowRight'?step:e.key==='ArrowLeft'?-step:0),n.y+(e.key==='ArrowDown'?step:e.key==='ArrowUp'?-step:0));drawArt();svg.querySelector('[data-map-node="'+n.id+'"]').focus({preventScroll:true});}
+      else if(e.key==='Enter'||e.key===' '){e.preventDefault();state.user=n.id;drawArt();showDetail();svg.querySelector('[data-map-node="'+n.id+'"]').focus({preventScroll:true});}
     });
     // No wheel, gesture, pinch or multi-touch zoom handlers. Zoom is button-only.
   }
   function exportSvg(){const svg=q('#reddit-map-svg');if(!svg)return;const copy=svg.cloneNode(true);copy.setAttribute('xmlns',NS);copy.setAttribute('width','980');copy.setAttribute('height','660');copy.querySelectorAll('[tabindex]').forEach(n=>n.removeAttribute('tabindex'));const url=URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(copy)],{type:'image/svg+xml;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='reddit-'+data.periods[state.period].label+'-'+state.view+'.svg';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
   function bind(){
     host.onclick=e=>{
-      const node=e.target.closest('[data-map-node]');if(node){state.user=node.dataset.mapNode;state.focus=null;drawArt();showDetail();return;}
+      const node=e.target.closest('[data-map-node]');if(node){state.user=node.dataset.mapNode;drawArt();showDetail();return;}
       const b=e.target.closest('[data-map]');if(!b)return;const action=b.dataset.map;
       if(action==='community'){const c=+b.dataset.community;if(state.selected.includes(c)){if(state.selected.length<=2){q('#rm-notice').textContent='请至少保留 2 个社区。';return;}state.selected=state.selected.filter(v=>v!==c);}else{if(state.selected.length>=10){q('#rm-notice').textContent='最多选择 10 个社区，请先取消一个。';return;}state.selected.push(c);}notice='';rebuild();render();}
       if(action==='period')setPeriod(b.dataset.value);
