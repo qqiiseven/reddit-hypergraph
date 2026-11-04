@@ -2,7 +2,7 @@
 (()=>{
   'use strict';
   const M=window.RedditForecastModel,methods=M.methods;
-  const state={user:0,cutoff:7,method:'hgnnp',filter:'all',revealed:false};
+  const state={user:0,cutoff:7,method:'hgnnp',filter:'hit',revealed:false};
   let host,network,predictions,loading,pending,graphCandidate=null,notice='';
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const fmt=n=>n.toLocaleString('zh-CN'),pct=n=>(n*100).toFixed(2)+'%';
@@ -14,7 +14,17 @@
     else if(!predictions.periods[state.cutoff])state.cutoff=windows[0];
     state.revealed=false;
   }
-  function accept(p){predictions=M.validate(network,p);state.user=M.initialUser(network,predictions.periods[7]?7:+Object.keys(predictions.periods)[0]);applyPending();}
+  function accept(p){
+    predictions=M.validate(network,p);
+    const requestedUser=!!pending;
+    state.user=M.initialUser(network,predictions.periods[7]?7:+Object.keys(predictions.periods)[0]);
+    applyPending();
+    if(!requestedUser){
+      const users=M.candidates(network,predictions,state.cutoff,state.method,state.filter);
+      if(users.length){if(!users.includes(state.user))state.user=users[0];}
+      else notice='当前窗口与模型没有符合筛选条件的用户，可切换筛选查看。';
+    }
+  }
   function missing(message){
     host.innerHTML='<section class="panel rf-card"><h2>下一期预测</h2><p class="rm-note">'+esc(message)+'</p><label class="rm-import">载入预测结果 <input id="rf-import" type="file" accept=".json,application/json"></label><p class="rm-note">选择本机导出的 reddit-predictions.json；需要配套的社区数据。也可切换到上方“精选案例”，查看内置的三个案例。</p></section>';
     q('#rf-import').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(!network)throw Error('请先准备本机的 reddit-network.json 社区数据。');if(file.size>30*1024*1024)throw Error('请选择小于 30 MB 的预测文件。');accept(JSON.parse(await file.text()));notice='已载入本地预测结果。';render();}catch(error){missing(error.message);}};
