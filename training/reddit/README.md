@@ -77,7 +77,7 @@ API 不保存用户输入，不修改旧数据或预测。每次返回训练批�
 .venv/bin/python training/reddit/activate.py --run-id reddit-local-001
 ```
 
-该命令先重放权重并核对全部导出，再备份当前网页完整预测到 `reports/reddit/page-backups/`。原来的三个讲解案例 `dist/reddit-data.js` 不会被覆盖。
+该命令先重放权重并核对全部导出，再备份当前网页完整预测到 `reports/reddit/page-backups/`。同时备份并同步三个讲解案例 `dist/reddit-data.js` 的推荐、真实结果及整体指标。若原案例不再满足讲解条件，同步会报错，需重新选择案例后再发布。
 
 ## 验证
 

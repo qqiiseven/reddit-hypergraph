@@ -14,6 +14,16 @@ const predictions = forecast.validate(network, JSON.parse(buffers[1]));
 if (!network.userIds.every(id => /^u_[0-9a-f]{10}$/.test(id))) {
   throw new Error('Public demo exports must use anonymized user IDs.');
 }
+const vm = require('node:vm');
+const context = {window: {}};
+vm.runInNewContext(fs.readFileSync(path.join(root, 'dist/reddit-data.js'), 'utf8'), context);
+const cases = JSON.parse(JSON.stringify(context.window.RedditDemoData));
+require('./check-reddit-cases.cjs')(cases, network, predictions);
+for (const [i, file] of files.entries()) {
+  if (cases.provenance.sourceHashes[file]?.sha256 !== crypto.createHash('sha256').update(buffers[i]).digest('hex')) {
+    throw new Error('Curated cases are stale; run python3 scripts/sync-reddit-cases.py');
+  }
+}
 const summary = {
   users: network.userIds.length,
   communities: network.communities.length,

@@ -38,3 +38,20 @@ test('outcome filters retain failures and keep no-new users separate from missed
 test('initial user selection depends only on history, never future outcomes',()=>{
   const {d}=fixture();assert.equal(M.initialUser(d,1),0);d.memberships[2]=d.userIds.map(()=>[]);assert.equal(M.initialUser(d,1),0);
 });
+
+test('curated cases match the full prediction batch and reject mixed results',()=>{
+  const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
+  const root=path.resolve(__dirname,'..'),context={window:{}};
+  vm.runInNewContext(fs.readFileSync(path.join(root,'dist/reddit-data.js'),'utf8'),context);
+  const d=JSON.parse(JSON.stringify(context.window.RedditDemoData));
+  const network=JSON.parse(fs.readFileSync(path.join(root,'dist/reddit-network.json')));
+  const p=JSON.parse(fs.readFileSync(path.join(root,'dist/reddit-predictions.json')));
+  const check=require('../scripts/check-reddit-cases.cjs');
+  check(d,network,p);
+  const wrongMetrics=structuredClone(d);wrongMetrics.metrics.mlp.recall5+=.01;
+  assert.throws(()=>check(wrongMetrics,network,p),/metrics differ/);
+  const wrongScores=structuredClone(d);wrongScores.cases[0].rankings.mlp[0].score+=.01;
+  assert.throws(()=>check(wrongScores,network,p),/ranking or score differs/);
+  const wrongTruth=structuredClone(d);wrongTruth.cases[0].truth=[];
+  assert.throws(()=>check(wrongTruth,network,p),/truth differs/);
+});

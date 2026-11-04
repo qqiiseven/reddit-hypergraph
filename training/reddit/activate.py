@@ -1,4 +1,4 @@
-"""Publish a validated local run to page 07, backing up the previous full export."""
+"""Publish a validated local run to Reddit pages, backing up the previous full export."""
 import argparse
 import json
 import shutil
@@ -18,7 +18,7 @@ def main():
     _, reports = run_paths(args.run_id)
     backup = ROOT / 'reports/reddit/page-backups' / datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
     backup.mkdir(parents=True)
-    for name in ['reddit-network.json', 'reddit-predictions.json']:
+    for name in ['reddit-network.json', 'reddit-predictions.json', 'reddit-data.js']:
         if (ROOT / 'dist' / name).exists():
             shutil.copy2(ROOT / 'dist' / name, backup / name)
     for script, arguments in [
@@ -29,7 +29,7 @@ def main():
         subprocess.run([sys.executable, str(ROOT / 'scripts' / script), *arguments], check=True)
     (ROOT / 'reports/reddit/active-run.json').write_text(json.dumps({
         'run_id': args.run_id, 'reports': str(reports), 'previous_page_export': str(backup),
-        'note': 'The original three cases in dist/reddit-data.js remain unchanged.',
+        'note': 'Curated cases and full predictions use the same batch; previous exports are backed up.',
     }, indent=2) + '\n')
     print('Activated', args.run_id, '; previous full predictions saved in', backup)
 

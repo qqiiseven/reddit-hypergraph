@@ -2,6 +2,8 @@
 import argparse
 import hashlib
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -27,3 +29,5 @@ result = {
 out = Path(__file__).resolve().parents[1] / 'dist/reddit-predictions.json'
 out.write_text(json.dumps(result, ensure_ascii=False, separators=(',', ':')) + '\n', encoding='utf-8')
 print(f'Exported {len(result["userIds"])} users / {len(result["periods"])} prediction windows to {out}; excluded from Git.')
+
+subprocess.run([sys.executable, str(Path(__file__).with_name('sync-reddit-cases.py'))], check=True)
