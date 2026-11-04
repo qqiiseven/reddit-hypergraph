@@ -42,6 +42,28 @@ def build_cases(d, network, predictions):
         assert sorted(c['truth']) == expected
         assert any(r['community'] in c['truth'] for r in c['rankings']['hgnnp']), 'Reselect HGNN+ example'
         assert not any(r['community'] in c['truth'] for r in c['rankings']['mlp']), 'Reselect MLP contrast'
+        if 'story' in c:
+            story = c['story']
+            source, target, b = story['source'], story['target'], ids[story['bridgeUserId']]
+            common = [k for k in range(t) if source in network['memberships'][k][u]
+                      and source in network['memberships'][k][b]]
+            assert common and source in memberships[u] and {source, target} <= set(memberships[b])
+            assert not any(target in r[b] for r in network['memberships'][:t])
+            assert target not in c['seen'] and c['truth'] == [target]
+            assert all(not any(r['community'] in c['truth'] for r in c['rankings'][m])
+                       for m in ['mlp', 'overlap', 'popular']), 'Reselect all-baseline contrast'
+            source_users = {i for i, cs in enumerate(memberships) if source in cs}
+            target_users = {i for i, cs in enumerate(memberships) if target in cs}
+            joint = len(source_users & target_users)
+            jaccard = joint / len(source_users | target_users)
+            lift = joint / len(source_users) / (len(target_users) / len(memberships))
+            policy = d['provenance']['selectionPolicy']
+            assert joint >= policy['min_shared'] and jaccard >= policy['min_jaccard'] and lift >= policy['min_lift']
+            story.update(sharedPeriod=max(common), bridgeEntryPeriod=t, shared=joint,
+                         sourceSize=len(source_users), targetSize=len(target_users),
+                         jaccard=jaccard, lift=lift,
+                         hgnnpRank=1+next(i for i, r in enumerate(c['rankings']['hgnnp']) if r['community'] == target),
+                         bridgeLabel=next(p['label'] for p in c['peers'] if p['userId'] == story['bridgeUserId']))
     metrics = predictions['metrics']
     d['metrics'] = metrics['summary']
     d['periodMetrics'] = [{'cutoff': k, 'target': k+1, **metrics['period_results'][str(k)]['methods']} for k in metrics['config']['test_cutoffs']]

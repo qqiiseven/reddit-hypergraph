@@ -54,4 +54,10 @@ test('curated cases match the full prediction batch and reject mixed results',()
   assert.throws(()=>check(wrongScores,network,p),/ranking or score differs/);
   const wrongTruth=structuredClone(d);wrongTruth.cases[0].truth=[];
   assert.throws(()=>check(wrongTruth,network,p),/truth differs/);
+  const wrongOverlap=structuredClone(d);wrongOverlap.cases[0].story.shared+=1;
+  assert.throws(()=>check(wrongOverlap,network,p),/Shared count differs/);
+  const wrongBridge=structuredClone(d);wrongBridge.cases[0].story.bridgeUserId=wrongBridge.cases[0].userId;
+  assert.throws(()=>check(wrongBridge,network,p),/Invalid bridge user/);
+  const wrongHistory=structuredClone(d);wrongHistory.cases[0].story.sharedPeriod=7;
+  assert.throws(()=>check(wrongHistory,network,p),/Shared history differs/);
 });
