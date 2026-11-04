@@ -4,3 +4,7 @@
 
 /* Seven-section navigation stays reachable in short viewports. */
 aside{overflow-y:auto}aside>*{flex-shrink:0}
+
+/* Separate the three presentation sections in the main navigation. */
+aside nav .nav-group-divider{display:block;height:1px;background:#e8eef5;margin:8px 10px;flex-shrink:0}
+@media(max-width:700px){aside nav .nav-group-divider{width:1px;height:22px;margin:4px;align-self:center}}

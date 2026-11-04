@@ -61,3 +61,7 @@
 @media(max-width:960px){.shared-shell main{margin:0;padding:10px 14px 20px}}
 
 @media(max-width:720px){.sidebar .nav-main{font-size:12px;padding:8px 10px;gap:6px}.sidebar nav:first-of-type{gap:3px}.sidebar #subnav{flex-wrap:wrap;gap:2px}.sidebar .sub-link{font-size:11px;padding:7px}}
+
+/* Separate the three presentation sections in the main navigation. */
+aside nav .nav-group-divider{display:block;height:1px;background:#e8eef5;margin:8px 10px;flex-shrink:0}
+@media(max-width:960px){aside nav .nav-group-divider{width:1px;height:22px;margin:4px;align-self:center}}
