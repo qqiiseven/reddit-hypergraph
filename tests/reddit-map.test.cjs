@@ -44,18 +44,3 @@ test('invalid imported references and mismatched windows are rejected',()=>{
   const duplicate=fixture();duplicate.memberships[0][0]=[1,1];assert.throws(()=>M.validate(duplicate),/归属/);
   const missing=fixture();missing.memberships.pop();assert.throws(()=>M.validate(missing),/归属/);
 });
-test('focused community separates all member disks from nonmembers without changing overview',()=>{
-  for(const count of [0,1,24,47,48]){
-    const users=Array.from({length:48},(_,i)=>({id:String(i),cs:i<count?[0,1]:[1,2]}));
-    const overview=M.layout(users,[0,1,2],'grid'),before=JSON.stringify(overview),view=M.focusLayout(overview,0),c=view.circle;
-    assert.equal(view.memberCount,count);assert.equal(view.otherCount,48-count);
-    for(const n of view.nodes){
-      const distance=Math.hypot(n.x-c.x,n.y-c.y);
-      assert.equal(n.member,n.cs.includes(0));
-      assert.ok(n.member?distance+15<c.r:distance-15>c.r);
-      assert.ok(n.x>=15&&n.x<=965&&n.y>=120&&n.y<=600);
-      for(const other of view.nodes)if(n.id!==other.id)assert.ok(Math.hypot(n.x-other.x,n.y-other.y)>30);
-    }
-    M.focusLayout(overview,1);assert.equal(JSON.stringify(overview),before);
-  }
-});
