@@ -10,6 +10,9 @@
   const button=(action,text,extra='')=>'<button type="button" data-map="'+action+'" '+extra+'>'+text+'</button>';
   const option=(value,label,current)=>'<option value="'+value+'" '+(value===current?'selected':'')+'>'+label+'</option>';
   function stats(){if(!cache.has(state.period))cache.set(state.period,M.summary(data,state.period));return cache.get(state.period);}
+  function selectedNode(){return geometry.nodes.find(n=>n.id===state.user);}
+  function edgeActive(c){const n=selectedNode();return n?n.cs.includes(c):state.focus===null||state.focus===c;}
+  function selectUser(id){state.user=geometry.nodes.some(n=>n.id===id)?id:null;state.focus=null;drawArt();showDetail();}
   function rebuild(){chosen=M.sample(data,state.period,state.selected,state.sampling);geometry=M.layout(chosen.users,state.selected,state.layout);state.focus=null;state.user=null;state.zoom=1;}
   function accept(d){data=M.validate(d);cache=new Map();state.period=Math.min(7,data.periods.length-1);state.selected=['technology','programming','gaming','science','movies','Music'].map(name=>data.communities.findIndex(c=>c.toLowerCase()===name.toLowerCase())).filter(c=>c>=0);if(state.selected.length<2)state.selected=[0,1];rebuild();}
   function loadingMarkup(message){host.innerHTML='<section class="panel rm-panel"><h2>圈层地图</h2><p class="rm-note">'+esc(message)+'</p><label class="rm-import">载入 Reddit 数据 <input id="rm-file" type="file" accept=".json,application/json"></label><p class="rm-note">选择原项目导出的 data.json 或本机的 reddit-network.json，文件仅在浏览器中读取。</p></section>';bindImport();}
@@ -37,7 +40,8 @@
       '<label>画面取样 <select id="rm-sampling">'+option('diverse','归属组合均衡',state.sampling)+option('bridges','跨圈最多',state.sampling)+'</select></label>'+
       '<label class="rm-check"><input id="rm-boundaries" type="checkbox" '+(state.boundaries?'checked':'')+'>包络</label><label class="rm-check"><input id="rm-curves" type="checkbox" '+(state.curves?'checked':'')+'>辅助曲线</label>'+
       button('reset-layout','恢复布局','class="rm-reset"')+button('export','导出 SVG ↗','class="rm-export"')+'</div>'+
-      '<div id="rm-chart"></div><div id="rm-legend" class="rm-legend"></div><div id="rm-detail" class="rm-detail" role="status" aria-live="polite"></div>'+
+      '<div class="rm-explorer"><section class="rm-node-lookup" aria-labelledby="rm-node-title"><div class="rm-node-heading"><div><h3 id="rm-node-title">从一个用户，找到他参与的群体</h3><p>节点 → 超边：一个用户可以同时属于多个社区。选中用户后，对应的社区会在图中一起高亮。</p></div>'+button('clear-user','清除选择','id="rm-clear-user" disabled')+'</div><label class="rm-user-picker" for="rm-user-select">选择当前画面的用户 <select id="rm-user-select" aria-label="选择当前画面的用户" aria-describedby="rm-user-help"></select></label><p id="rm-user-help" class="rm-note">也可以直接点击图上的数字圆点；编号只用于当前画面。</p><div id="rm-user-memberships" aria-live="polite" role="status"></div></section>'+
+      '<div id="rm-chart"></div></div><div id="rm-legend" class="rm-legend"></div><div id="rm-detail" class="rm-detail" role="status" aria-live="polite"></div>'+
       '<p class="rm-note">圆点为用户，色块为社区超边；辅助曲线表示社区归属，不是真实回复关系。拖动节点只调整位置，缩放请使用图内按钮。</p>'+
       '<p id="rm-window-summary" class="rm-note">'+windowSummary()+'</p></section>';
     drawChart();bind();
@@ -59,6 +63,7 @@
   function centroid(edge){const ns=geometry.nodes.filter(n=>edge.members.includes(n.id));return ns.length?{x:ns.reduce((s,n)=>s+n.x,0)/ns.length,y:ns.reduce((s,n)=>s+n.y,0)/ns.length}:null;}
   function drawChart(){
     const chart=q('#rm-chart');chart.replaceChildren();q('#rm-legend').replaceChildren();
+    const picker=q('#rm-user-select');picker.innerHTML=option('',geometry.nodes.length?'请选择用户':'当前画面没有可选用户',state.user||'')+geometry.nodes.map(n=>option(n.id,esc(n.number+' · '+n.label),state.user)).join('');picker.disabled=!geometry.nodes.length;
     if(state.view==='matrix'){drawMatrix();showDetail();return;}
     chart.className='rm-canvas';
     const caption=document.createElement('div');caption.className='rm-canvas-caption';caption.textContent=data.periods[state.period].label+' / '+chosen.users.length+' 位展示用户 / '+state.selected.length+' 条社区超边';chart.append(caption);
@@ -75,18 +80,18 @@
     const defs=svgEl('defs');layer.append(defs);
     for(const edge of geometry.edges){
       const center=centroid(edge);if(!center)continue;
-      const active=state.focus===null||state.focus===edge.c,maskId='rm-mask-'+edge.c;
+      const active=edgeActive(edge.c),highlight=active&&(state.user!==null||state.focus!==null),maskId='rm-mask-'+edge.c;
       const mask=svgEl('mask',{id:maskId,maskUnits:'userSpaceOnUse',x:0,y:0,width:980,height:660});mask.append(svgEl('rect',{width:980,height:660,fill:'white'}));
       geometry.nodes.filter(n=>!edge.members.includes(n.id)).forEach(n=>mask.append(svgEl('circle',{cx:n.x,cy:n.y,r:20,fill:'black','data-mask-user':n.id})));defs.append(mask);
       if(state.boundaries){
         const points=H.outline(geometry.nodes,edge.members,29),d=points.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+','+p[1].toFixed(1)).join('')+'Z';
-        const path=svgEl('path',{d,fill:edge.color,'fill-opacity':active?(state.focus===edge.c?.13:.045):.012,stroke:edge.color,'stroke-opacity':active?.8:.15,'stroke-width':state.focus===edge.c?2.5:1.5,mask:'url(#'+maskId+')','data-map':'focus','data-value':edge.c,tabindex:0,role:'button','aria-label':data.communities[edge.c]+'，显示 '+edge.members.length+' 位成员'});path.append(svgEl('title',{},data.communities[edge.c]+' · '+fmt(stats().sizes[edge.c])+' 位样本用户'));layer.append(path);
+        const path=svgEl('path',{d,fill:edge.color,'fill-opacity':active?(highlight?.13:.045):.012,stroke:edge.color,'stroke-opacity':active?.8:.15,'stroke-width':highlight?2.5:1.5,mask:'url(#'+maskId+')','data-map':'focus','data-value':edge.c,tabindex:0,role:'button','aria-label':data.communities[edge.c]+'，显示 '+edge.members.length+' 位成员'});path.append(svgEl('title',{},data.communities[edge.c]+' · '+fmt(stats().sizes[edge.c])+' 位样本用户'));layer.append(path);
       }
       if(state.curves)for(const n of geometry.nodes.filter(n=>edge.members.includes(n.id))){const mid=(n.x+center.x)/2;layer.append(svgEl('path',{d:'M'+n.x+' '+n.y+' C'+mid+' '+n.y+','+mid+' '+center.y+','+center.x+' '+center.y,fill:'none',stroke:edge.color,'stroke-width':1.2,'stroke-opacity':active?.5:.08,'pointer-events':'none','data-membership':edge.c+':'+n.id}));}
-      if(!state.boundaries)layer.append(svgEl('rect',{x:center.x-6,y:center.y-6,width:12,height:12,rx:3,fill:edge.color,'pointer-events':'none'}));
+      if(!state.boundaries)layer.append(svgEl('rect',{x:center.x-6,y:center.y-6,width:12,height:12,rx:3,fill:edge.color,opacity:active?1:.2,'pointer-events':'none'}));
     }
     for(const n of geometry.nodes){
-      const active=state.focus===null||n.cs.includes(state.focus),g=svgEl('g',{'data-map-node':n.id,transform:'translate('+n.x+' '+n.y+')',tabindex:0,role:'button','aria-label':n.label+'；'+n.cs.map(c=>data.communities[c]).join('、')+'；可拖动或用方向键移动',opacity:active?1:.18,class:'rm-user'});
+      const active=state.user!==null?state.user===n.id:state.focus===null||n.cs.includes(state.focus),g=svgEl('g',{'data-map-node':n.id,transform:'translate('+n.x+' '+n.y+')',tabindex:0,role:'button','aria-pressed':state.user===n.id,'aria-label':n.number+' · '+n.label+'；'+n.cs.map(c=>data.communities[c]).join('、')+'；可拖动或用方向键移动',opacity:active?1:state.user!==null?.4:.18,class:'rm-user'});
       g.append(svgEl('title',{},n.label+' · '+n.cs.map(c=>data.communities[c]).join('、')));
       g.append(svgEl('circle',{r:13,fill:state.user===n.id?'#e4f5f7':'#fff',stroke:state.user===n.id?'#1597a3':'#7e97b4','stroke-width':state.user===n.id?2.5:1.4}));
       g.append(svgEl('text',{y:4,'text-anchor':'middle','font-size':11,'font-family':'Arial, sans-serif',fill:'#36516f','pointer-events':'none'},n.number));layer.append(g);
@@ -99,16 +104,26 @@
       for(const cy of [top,bottom,center.y-45,center.y+45,45,615])for(const dx of [0,-90,90,-180,180,-270,270])candidates.push({x:Math.max(width/2+10,Math.min(970-width/2,center.x+dx)),y:Math.max(40,Math.min(620,cy))});
       const free=p=>!labelBoxes.some(b=>Math.abs(b.x-p.x)<(b.width+width)/2+8&&Math.abs(b.y-p.y)<30)&&!geometry.nodes.some(n=>Math.abs(n.x-p.x)<width/2+n.r+5&&Math.abs(n.y-p.y)<n.r+17);
       const place=candidates.find(free)||{x:70+(i%5)*190,y:40+Math.floor(i/5)*30},x=place.x,y=place.y;labelBoxes.push({x,y,width});
-      const g=svgEl('g',{'data-map':'focus','data-value':edge.c,transform:'translate('+x+' '+y+')',tabindex:0,role:'button','aria-label':'高亮 '+name,class:'rm-edge-label'});
+      const related=state.user!==null&&edgeActive(edge.c),g=svgEl('g',{'data-map':'focus','data-value':edge.c,transform:'translate('+x+' '+y+')',tabindex:0,role:'button','aria-label':'高亮 '+name,opacity:edgeActive(edge.c)?1:.3,class:'rm-edge-label'});
       g.append(svgEl('rect',{x:-width/2,y:-11,width,height:22,rx:10,fill:'#fff','fill-opacity':.96,stroke:edge.color,'stroke-width':1}));
       g.append(svgEl('text',{y:4,'text-anchor':'middle','font-size':11,'font-family':'Arial, sans-serif',fill:edge.color},name));layer.append(g);
+      if(related){const n=selectedNode();layer.insertBefore(svgEl('path',{d:'M'+n.x+' '+n.y+' L'+x+' '+(y+11),fill:'none',stroke:edge.color,'stroke-width':2,'stroke-dasharray':'5 4','pointer-events':'none','data-user-membership':edge.c}),layer.querySelector('[data-map-node]'));}
     });
   }
   function showDetail(){
     const el=q('#rm-detail');if(!el)return;
+    showUserMemberships();
     if(state.user!==null){const n=geometry.nodes.find(n=>n.id===state.user);if(n){el.textContent=n.number+' · '+n.label+' — 本图归属：'+n.cs.map(c=>data.communities[c]).join('、');el.insertAdjacentHTML('beforeend',button('predict','查看下一期预测 →','class="rm-predict-link"'));return;}}
     if(state.focus!==null){const edge=geometry.edges.find(e=>e.c===state.focus);el.textContent=data.communities[edge.c]+'：当前画面 '+edge.members.length+' 人，本期样本内 '+fmt(stats().sizes[edge.c])+' 人。';return;}
     el.textContent='点击节点或社区标签查看真实归属；拖动节点整理画面。';
+  }
+  function showUserMemberships(){
+    const n=selectedNode(),result=q('#rm-user-memberships');q('#rm-user-select').value=n?n.id:'';q('#rm-clear-user').disabled=!n;
+    q('#rm-legend').querySelectorAll('[data-map=focus]').forEach(b=>{const c=+b.dataset.value;b.setAttribute('aria-pressed',String(n?n.cs.includes(c):state.focus===c));});
+    if(!n){result.innerHTML='<p class="rm-node-empty">'+(geometry.nodes.length?'选择一个用户，查看他在 '+esc(data.periods[state.period].label)+' 关联的社区超边。':'当前所选社区没有符合取样条件的用户，请调整社区或时间窗口。')+'</p>';return;}
+    const all=data.memberships[state.period][+n.id],other=all.filter(c=>!state.selected.includes(c));
+    const chips=cs=>cs.map(c=>{const edge=geometry.edges.find(e=>e.c===c);return '<span class="rm-membership-chip" '+(edge?'style="--edge-color:'+edge.color+'"':'')+'><i></i>'+esc(data.communities[c])+'</span>';}).join('');
+    result.innerHTML='<div class="rm-node-summary"><span class="rm-selected-number">'+n.number+'</span><div><strong>'+esc(n.label)+'</strong><p>'+esc(data.periods[state.period].label)+' · 本期参与 '+all.length+' 个社区，其中 '+n.cs.length+' 个已在当前图中展示。</p></div></div><div class="rm-membership-row"><span>图中关联的超边</span><div class="rm-membership-chips">'+chips(n.cs)+'</div></div>'+(other.length?'<div class="rm-membership-row rm-memberships-other"><span>本期其他社区 · 未绘入当前图</span><div class="rm-membership-chips">'+chips(other)+'</div></div>':'')+'<p class="rm-note">'+(state.view==='matrix'?'当前为社区重叠矩阵，切换到“包络超图”或“关联线”查看节点与超边的联动。':'图中虚线连接所选用户与所属社区标签，表示参与关系，不是用户之间的回复关系。')+'</p>';
   }
   function drawMatrix(){
     const chart=q('#rm-chart'),s=stats();chart.className='rm-matrix-wrap';
@@ -119,22 +134,23 @@
     function point(e){const matrix=svg.querySelector('[data-map-viewport]').getScreenCTM();if(!matrix)return null;const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(matrix.inverse());}
     svg.addEventListener('pointerdown',e=>{const target=e.target.closest('[data-map-node]');if(!target||e.button!==0||e.isPrimary===false)return;const p=point(e);if(!p)return;const n=geometry.nodes.find(n=>n.id===target.dataset.mapNode);suppress=false;drag={n,id:e.pointerId,dx:n.x-p.x,dy:n.y-p.y,x:e.clientX,y:e.clientY,moved:false};svg.setPointerCapture(e.pointerId);svg.classList.add('is-dragging');e.preventDefault();});
     svg.addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;if(!drag.moved&&Math.hypot(e.clientX-drag.x,e.clientY-drag.y)<4)return;drag.moved=true;const p=point(e);if(p&&M.move(geometry,drag.n.id,p.x+drag.dx,p.y+drag.dy))drawArt();e.preventDefault();});
-    function finish(e){if(!drag||drag.id!==e.pointerId)return;const done=drag;drag=null;suppress=true;svg.classList.remove('is-dragging');if(svg.hasPointerCapture(e.pointerId))svg.releasePointerCapture(e.pointerId);state.user=done.n.id;state.focus=null;drawArt();showDetail();svg.querySelector('[data-map-node="'+done.n.id+'"]')?.focus({preventScroll:true});}
+    function finish(e){if(!drag||drag.id!==e.pointerId)return;const done=drag;drag=null;suppress=true;svg.classList.remove('is-dragging');if(svg.hasPointerCapture(e.pointerId))svg.releasePointerCapture(e.pointerId);selectUser(done.n.id);svg.querySelector('[data-map-node="'+done.n.id+'"]')?.focus({preventScroll:true});}
     svg.addEventListener('pointerup',finish);svg.addEventListener('pointercancel',finish);svg.addEventListener('lostpointercapture',finish);
     svg.addEventListener('click',e=>{if(suppress&&e.detail!==0){suppress=false;e.preventDefault();e.stopPropagation();}},true);
     svg.addEventListener('keydown',e=>{const target=e.target.closest('[data-map-node]');if(!target)return;const n=geometry.nodes.find(n=>n.id===target.dataset.mapNode);
       if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){e.preventDefault();const step=e.shiftKey?20:8;M.move(geometry,n.id,n.x+(e.key==='ArrowRight'?step:e.key==='ArrowLeft'?-step:0),n.y+(e.key==='ArrowDown'?step:e.key==='ArrowUp'?-step:0));drawArt();svg.querySelector('[data-map-node="'+n.id+'"]').focus({preventScroll:true});}
-      else if(e.key==='Enter'||e.key===' '){e.preventDefault();state.user=n.id;state.focus=null;drawArt();showDetail();svg.querySelector('[data-map-node="'+n.id+'"]').focus({preventScroll:true});}
+      else if(e.key==='Enter'||e.key===' '){e.preventDefault();selectUser(n.id);svg.querySelector('[data-map-node="'+n.id+'"]').focus({preventScroll:true});}
     });
     // No wheel, gesture, pinch or multi-touch zoom handlers. Zoom is button-only.
   }
   function exportSvg(){const svg=q('#reddit-map-svg');if(!svg)return;const copy=svg.cloneNode(true);copy.setAttribute('xmlns',NS);copy.setAttribute('width','980');copy.setAttribute('height','660');copy.querySelectorAll('[tabindex]').forEach(n=>n.removeAttribute('tabindex'));const url=URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(copy)],{type:'image/svg+xml;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='reddit-'+data.periods[state.period].label+'-'+state.view+'.svg';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
   function bind(){
     host.onclick=e=>{
-      const node=e.target.closest('[data-map-node]');if(node){state.user=node.dataset.mapNode;state.focus=null;drawArt();showDetail();return;}
+      const node=e.target.closest('[data-map-node]');if(node){selectUser(node.dataset.mapNode);return;}
       const b=e.target.closest('[data-map]');if(!b)return;const action=b.dataset.map;
       if(action==='community'){const c=+b.dataset.community;if(state.selected.includes(c)){if(state.selected.length<=2){q('#rm-notice').textContent='请至少保留 2 个社区。';return;}state.selected=state.selected.filter(v=>v!==c);}else{if(state.selected.length>=10){q('#rm-notice').textContent='最多选择 10 个社区，请先取消一个。';return;}state.selected.push(c);}notice='';rebuild();render();}
       if(action==='period')setPeriod(b.dataset.value);
+      if(action==='clear-user')selectUser(null);
       if(action==='view'){state.view=b.dataset.value;if(state.view==='lines'){state.boundaries=false;state.curves=true;}else if(state.view==='hull'){state.boundaries=true;}render();}
       if(action==='focus'){state.focus=state.focus===+b.dataset.value?null:+b.dataset.value;state.user=null;drawArt();q('#rm-legend').querySelectorAll('[data-map=focus]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.value===state.focus)));showDetail();}
       if(action==='matrix-cell'){const s=stats(),a=+b.dataset.a,c=+b.dataset.b;q('#rm-detail').textContent=data.communities[a]+' ↔ '+data.communities[c]+'：共享 '+fmt(s.co[a][c])+' 人 / 并集 '+fmt(s.sizes[a]+s.sizes[c]-s.co[a][c])+' 人 · '+pct(s.jacc[a][c]);}
@@ -146,6 +162,7 @@
     host.onkeydown=e=>{const b=e.target.closest('[data-map][role=button]');if(b&&(e.key==='Enter'||e.key===' ')){e.preventDefault();b.dispatchEvent(new MouseEvent('click',{bubbles:true,detail:0}));}};
     q('#rm-period').oninput=e=>setPeriod(e.target.value);
     q('#rm-period').onchange=e=>setPeriod(e.target.value);
+    q('#rm-user-select').onchange=e=>selectUser(e.target.value);
     q('#rm-search').oninput=e=>{const value=e.target.value.toLowerCase();host.querySelectorAll('[data-community]').forEach(b=>b.hidden=!data.communities[+b.dataset.community].toLowerCase().includes(value));};
     q('#rm-layout').onchange=e=>{state.layout=e.target.value;geometry=M.layout(chosen.users,state.selected,state.layout);state.zoom=1;drawChart();};
     q('#rm-sampling').onchange=e=>{state.sampling=e.target.value;rebuild();render();};
