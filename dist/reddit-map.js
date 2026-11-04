@@ -3,14 +3,14 @@
   'use strict';
   const M=window.RedditMapModel,H=window.HyperModel,NS='http://www.w3.org/2000/svg';
   const state={period:7,selected:[],view:'hull',layout:'force',sampling:'diverse',boundaries:true,curves:false,zoom:1,focus:null,user:null};
-  let host,data,loading,geometry,chosen,cache=new Map(),notice='';
+  let host,data,loading,geometry,chosen,cache=new Map(),notice='',lookupUser=null;
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const fmt=n=>n.toLocaleString('zh-CN'),pct=n=>(n*100).toFixed(1)+'%';
   const q=s=>host.querySelector(s);
   const button=(action,text,extra='')=>'<button type="button" data-map="'+action+'" '+extra+'>'+text+'</button>';
   const option=(value,label,current)=>'<option value="'+value+'" '+(value===current?'selected':'')+'>'+label+'</option>';
   function stats(){if(!cache.has(state.period))cache.set(state.period,M.summary(data,state.period));return cache.get(state.period);}
-  function rebuild(){chosen=M.sample(data,state.period,state.selected,state.sampling);geometry=M.layout(chosen.users,state.selected,state.layout);state.focus=null;state.user=null;state.zoom=1;}
+  function rebuild(){chosen=M.sample(data,state.period,state.selected,state.sampling);geometry=M.layout(chosen.users,state.selected,state.layout);state.focus=null;state.user=null;state.zoom=1;lookupUser=null;}
   function accept(d){data=M.validate(d);cache=new Map();state.period=Math.min(7,data.periods.length-1);state.selected=['technology','programming','gaming','science','movies','Music'].map(name=>data.communities.findIndex(c=>c.toLowerCase()===name.toLowerCase())).filter(c=>c>=0);if(state.selected.length<2)state.selected=[0,1];rebuild();}
   function loadingMarkup(message){host.innerHTML='<section class="panel rm-panel"><h2>圈层地图</h2><p class="rm-note">'+esc(message)+'</p><label class="rm-import">载入 Reddit 数据 <input id="rm-file" type="file" accept=".json,application/json"></label><p class="rm-note">选择原项目导出的 data.json 或本机的 reddit-network.json，文件仅在浏览器中读取。</p></section>';bindImport();}
   function bindImport(){const input=q('#rm-file');if(input)input.onchange=async()=>{const file=input.files[0];if(!file)return;try{if(file.size>25*1024*1024)throw Error('请选择小于 25 MB 的数据文件。');accept(JSON.parse(await file.text()));notice='已载入本地文件。';render();}catch(e){loadingMarkup('无法载入：'+e.message);}};}
@@ -39,7 +39,7 @@
       button('reset-layout','恢复布局','class="rm-reset"')+button('export','导出 SVG ↗','class="rm-export"')+'</div>'+
       '<div id="rm-chart"></div><div id="rm-legend" class="rm-legend"></div><div id="rm-detail" class="rm-detail" role="status" aria-live="polite"></div>'+
       '<p class="rm-note">圆点为用户，色块为社区超边；辅助曲线表示社区归属，不是真实回复关系。拖动节点只调整位置，缩放请使用图内按钮。</p>'+
-      '<p id="rm-window-summary" class="rm-note">'+windowSummary()+'</p></section>';
+      '<p id="rm-window-summary" class="rm-note">'+windowSummary()+'</p></section><section id="rm-node-view" class="panel rm-panel rn-panel" aria-label="从用户查找所属群体"></section>';
     drawChart();bind();
   }
   function windowSummary(){return '当前窗口共有 '+fmt(chosen.total)+' 位用户出现在至少两个选中社区；画面最多抽取 48 位，重叠矩阵使用全部 '+fmt(data.userIds.length)+' 位样本。切换时间窗口会重新取样，节点数量可能相同。图中数字是本期绘图编号，跨期不代表同一用户；点击节点可查看匿名用户 ID。颜色和包络面积不表示社区规模。';}
@@ -59,6 +59,7 @@
   function centroid(edge){const ns=geometry.nodes.filter(n=>edge.members.includes(n.id));return ns.length?{x:ns.reduce((s,n)=>s+n.x,0)/ns.length,y:ns.reduce((s,n)=>s+n.y,0)/ns.length}:null;}
   function drawChart(){
     const chart=q('#rm-chart');chart.replaceChildren();q('#rm-legend').replaceChildren();
+    drawNodeView();
     if(state.view==='matrix'){drawMatrix();showDetail();return;}
     chart.className='rm-canvas';
     const caption=document.createElement('div');caption.className='rm-canvas-caption';caption.textContent=data.periods[state.period].label+' / '+chosen.users.length+' 位展示用户 / '+state.selected.length+' 条社区超边';chart.append(caption);
@@ -110,6 +111,20 @@
     if(state.focus!==null){const edge=geometry.edges.find(e=>e.c===state.focus);el.textContent=data.communities[edge.c]+'：当前画面 '+edge.members.length+' 人，本期样本内 '+fmt(stats().sizes[edge.c])+' 人。';return;}
     el.textContent='点击节点或社区标签查看真实归属；拖动节点整理画面。';
   }
+  function drawNodeView(){
+    const panel=q('#rm-node-view'),p=data.periods[state.period];
+    const n=geometry.nodes.find(n=>n.id===lookupUser)||geometry.nodes[0];
+    lookupUser=n?n.id:null;
+    const heading='<div class="rm-heading rn-heading"><div><span class="r-kicker">NODE TO GROUP / 从个体出发</span><h2>一个用户，属于哪些群体？</h2><p>选中一个节点，沿着关联线找到他参与的社区超边。</p></div><span class="rn-period">'+esc(p.label)+' · '+esc(p.start)+' — '+esc(p.end)+'</span></div>';
+    if(!n){panel.innerHTML=heading+'<p class="rn-empty">当前窗口没有可展示的用户。请在上方调整社区或时间窗口。</p>';return;}
+    const all=data.memberships[state.period][+n.id],edges=geometry.edges.filter(e=>n.cs.includes(e.c)),other=all.filter(c=>!state.selected.includes(c));
+    const height=Math.max(290,edges.length*64+56),cy=height/2,top=(height-edges.length*64)/2;
+    const paths=edges.map((edge,i)=>{const y=top+i*64+26;return '<path d="M200 '+cy+' C300 '+cy+',305 '+y+',402 '+y+'" fill="none" stroke="'+edge.color+'" stroke-width="2" stroke-opacity=".65"/>';}).join('');
+    const groups=edges.map((edge,i)=>{const y=top+i*64,name=data.communities[edge.c],short=name.length>24?name.slice(0,23)+'…':name;return '<g data-rn-edge="'+edge.c+'"><title>'+esc(name)+' · 本期样本 '+fmt(stats().sizes[edge.c])+' 人</title><rect x="402" y="'+y+'" width="340" height="52" rx="12" fill="white" stroke="'+edge.color+'" stroke-opacity=".55"/><rect x="402" y="'+(y+12)+'" width="4" height="28" rx="2" fill="'+edge.color+'"/><text x="423" y="'+(y+23)+'" fill="#36536e" font-size="14" font-weight="600">'+esc(short)+'</text><text x="423" y="'+(y+41)+'" fill="#869bad" font-size="10">社区超边 · 本期样本 '+fmt(stats().sizes[edge.c])+' 人</text><circle cx="402" cy="'+(y+26)+'" r="4" fill="'+edge.color+'"/></g>';}).join('');
+    const id=n.label.length>22?n.label.slice(0,21)+'…':n.label;
+    const svg='<svg viewBox="0 0 780 '+height+'" role="img" aria-label="用户 '+n.number+' 在 '+esc(p.label)+' 关联的社区：'+esc(edges.map(e=>data.communities[e.c]).join('、'))+'"><title>'+esc(n.label)+' 的社区归属</title>'+paths+'<circle cx="158" cy="'+cy+'" r="59" fill="#e9f4f8"/><circle cx="158" cy="'+cy+'" r="42" fill="#fff" stroke="#57aab7" stroke-width="2"/><text x="158" y="'+(cy+8)+'" text-anchor="middle" fill="#2f6579" font-size="27" font-weight="600">'+n.number+'</text><text x="158" y="'+(cy+82)+'" text-anchor="middle" fill="#486a85" font-size="12">'+esc(id)+'</text><text x="158" y="'+(cy+104)+'" text-anchor="middle" fill="#8ba0b2" font-size="10">用户节点</text>'+groups+'</svg>';
+    panel.innerHTML=heading+'<div class="rn-body"><div class="rn-picker"><div class="rn-picker-heading"><h3>选择用户节点</h3><span>'+geometry.nodes.length+' 位</span></div><p>编号与上方地图一致</p><div class="rn-node-grid" role="group" aria-label="选择要查询的用户">'+geometry.nodes.map(u=>'<button type="button" data-rn-user="'+u.id+'" aria-pressed="'+(u.id===n.id)+'" aria-label="查看用户 '+u.number+' 的群体" title="'+esc(u.label)+'">'+u.number+'</button>').join('')+'</div><p class="rn-picker-note">此处选择独立，不改变上方地图。</p></div><div class="rn-result"><div class="rn-result-heading"><div><span class="rn-result-kicker">节点 '+n.number+' 的关联关系</span><h3>连接 <strong>'+edges.length+'</strong> 个图中群体</h3></div><span class="rn-scope">本期共参与 '+all.length+' 个社区</span></div><div class="rn-diagram">'+svg+'</div><div class="rn-key"><span><i class="rn-key-node"></i>用户节点</span><span><i class="rn-key-edge"></i>社区超边</span><span><i class="rn-key-line"></i>参与关系</span></div>'+(other.length?'<details class="rn-other"><summary>另有 '+other.length+' 个本期参与的社区，未在上方地图中展示</summary><div>'+other.map(c=>'<span>'+esc(data.communities[c])+'</span>').join('')+'</div></details>':'<p class="rn-all-shown">该用户本期参与的社区已全部展示。</p>')+'</div></div><p class="rn-footnote">一个节点可以同时关联多条超边。这里展示同一时间窗口内的真实社区参与记录，连线表示归属关系，不表示用户之间有回复或好友关系。</p>';
+  }
   function drawMatrix(){
     const chart=q('#rm-chart'),s=stats();chart.className='rm-matrix-wrap';
     chart.innerHTML='<table class="rm-matrix"><caption>'+esc(data.periods[state.period].label)+' · 全部 '+fmt(data.userIds.length)+' 位样本的社区交并比（Jaccard）</caption><thead><tr><th>社区</th>'+state.selected.map(c=>'<th>'+esc(data.communities[c])+'</th>').join('')+'</tr></thead><tbody>'+state.selected.map(a=>'<tr><th>'+esc(data.communities[a])+'</th>'+state.selected.map(b=>'<td><button data-map="matrix-cell" data-a="'+a+'" data-b="'+b+'" style="background:rgba(40,166,163,'+(.04+s.jacc[a][b]*.32)+')" aria-label="'+esc(data.communities[a]+' 与 '+data.communities[b]+'，共享 '+s.co[a][b]+' 人，交并比 '+pct(s.jacc[a][b]))+'">'+pct(s.jacc[a][b])+'</button></td>').join('')+'</tr>').join('')+'</tbody></table>';
@@ -131,6 +146,7 @@
   function exportSvg(){const svg=q('#reddit-map-svg');if(!svg)return;const copy=svg.cloneNode(true);copy.setAttribute('xmlns',NS);copy.setAttribute('width','980');copy.setAttribute('height','660');copy.querySelectorAll('[tabindex]').forEach(n=>n.removeAttribute('tabindex'));const url=URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(copy)],{type:'image/svg+xml;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='reddit-'+data.periods[state.period].label+'-'+state.view+'.svg';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
   function bind(){
     host.onclick=e=>{
+      const lookup=e.target.closest('[data-rn-user]');if(lookup){lookupUser=lookup.dataset.rnUser;drawNodeView();q('[data-rn-user="'+lookupUser+'"]')?.focus({preventScroll:true});return;}
       const node=e.target.closest('[data-map-node]');if(node){state.user=node.dataset.mapNode;state.focus=null;drawArt();showDetail();return;}
       const b=e.target.closest('[data-map]');if(!b)return;const action=b.dataset.map;
       if(action==='community'){const c=+b.dataset.community;if(state.selected.includes(c)){if(state.selected.length<=2){q('#rm-notice').textContent='请至少保留 2 个社区。';return;}state.selected=state.selected.filter(v=>v!==c);}else{if(state.selected.length>=10){q('#rm-notice').textContent='最多选择 10 个社区，请先取消一个。';return;}state.selected.push(c);}notice='';rebuild();render();}
